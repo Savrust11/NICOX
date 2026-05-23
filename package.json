@@ -1,0 +1,13 @@
+{
+  "name": "nicox-stray-cat-system",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "api",
+    "frontend"
+  ],
+  "scripts": {
+    "dev:api": "npm --workspace=api run dev",
+    "dev:frontend": "npm --workspace=frontend run dev"
+  }
+}
