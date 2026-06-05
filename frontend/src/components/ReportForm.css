@@ -1,0 +1,364 @@
+.report-form {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.map-picker {
+  height: 42vh;
+  width: 100%;
+  flex-shrink: 0;
+  cursor: crosshair;
+  background: #e8e8e8;
+}
+
+/* Leaflet marker (red pin) */
+.report-marker { background: transparent; border: none; }
+.report-pin {
+  width: 24px;
+  height: 32px;
+  background: #e74c3c;
+  border: 2px solid #fff;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+}
+
+.map-hint {
+  background: #fff;
+  border-bottom: 1px solid #eee;
+  padding: 6px 14px;
+  font-size: 12px;
+  color: #555;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.fields {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #fff;
+}
+
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+/* Tablet: grid-3 collapses to 2 cols, grid-2 keeps 2 cols */
+@media (max-width: 720px) {
+  .grid-3 { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Mobile: all to single column */
+@media (max-width: 480px) {
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+}
+
+.amount-input {
+  margin-top: 6px;
+}
+
+/* Required field indicator */
+.req {
+  color: #d93025;
+  font-weight: 700;
+  margin-left: 2px;
+}
+
+/* Group of stacked fields (left side of 2-col when paired with photo) */
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.align-stretch {
+  align-items: stretch;
+}
+.align-stretch > .field {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Photo field — label on the left, square image on the right */
+.photo-field {
+  flex-direction: row !important;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 10px;
+  min-height: 0;
+}
+
+.photo-label-side {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  position: relative;
+}
+
+.photo-square {
+  width: 156px;
+  height: 156px;
+  flex-shrink: 0;
+  flex-grow: 0;
+}
+
+.photo-square-img,
+.photo-square-add {
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  display: block;
+}
+
+.photo-square-img {
+  background: #f0f0f0;
+}
+.photo-square-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.photo-square-add {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1.5px dashed #c5c5c5;
+  color: #888;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  background: #fafafa;
+  transition: border-color 0.15s, color 0.15s;
+}
+.photo-square-add:hover {
+  border-color: #1a73e8;
+  color: #1a73e8;
+}
+
+/* Mobile: bigger square photo area */
+@media (max-width: 480px) {
+  .photo-square {
+    width: 220px;
+    height: 220px;
+  }
+}
+
+/* Modern toggle chip (replaces plain checkbox) */
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #555;
+  background: #fafafa;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s;
+}
+.chip:hover {
+  border-color: #b8d4f7;
+  background: #f5faff;
+}
+.chip.on {
+  border-color: #1a73e8;
+  background: #e8f1fd;
+  color: #1a4d99;
+}
+
+/* Hide the underlying radio/checkbox input visually but keep it focusable */
+.chip-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+  opacity: 0;
+}
+
+/* Keyboard focus visibility on the chip when the underlying input has focus */
+.chip:has(.chip-input:focus-visible) {
+  outline: 2px solid #1a73e8;
+  outline-offset: 2px;
+}
+
+.photo-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+.photo-thumb {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f0f0f0;
+}
+
+.photo-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.photo-remove {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.65);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 0;
+}
+.photo-remove:hover { background: rgba(0,0,0,0.85); }
+
+.photo-add {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+  gap: 2px;
+  border: 1.5px dashed #c5c5c5;
+  border-radius: 8px;
+  color: #888;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 500;
+  background: #fafafa;
+  transition: border-color 0.15s, color 0.15s;
+}
+.photo-add:hover {
+  border-color: #1a73e8;
+  color: #1a73e8;
+}
+
+.photo-info {
+  position: absolute;
+  top: 24px;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+}
+
+.hint {
+  font-size: 11px;
+  color: #888;
+  margin: 0;
+}
+
+.error {
+  color: #d93025;
+  font-size: 13px;
+  background: #fce8e6;
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+
+.submit-btn {
+  background: #1a73e8;
+  color: #fff;
+  font-size: 15px;
+  padding: 12px;
+  border-radius: 8px;
+  width: 100%;
+  margin-top: auto;
+}
+
+/* Success screen */
+.success-screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 40px 24px;
+  background: #fff;
+  text-align: center;
+}
+
+
+.success-screen h2 { font-size: 20px; font-weight: 700; color: #111; }
+.success-screen p  { font-size: 14px; color: #666; }
+
+.success-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 280px;
+  margin-top: 8px;
+}
+
+.btn-primary {
+  background: #1a73e8;
+  color: #fff;
+  font-size: 15px;
+  padding: 12px;
+  border-radius: 8px;
+  width: 100%;
+}
+
+.btn-secondary {
+  background: #f0f0f0;
+  color: #333;
+  font-size: 15px;
+  padding: 12px;
+  border-radius: 8px;
+  width: 100%;
+}

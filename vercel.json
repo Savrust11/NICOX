@@ -8,14 +8,8 @@
   ],
   "routes": [
     {
-      "src": "/api/(.*)",
+      "src": "/(.*)",
       "dest": "api/src/index.js"
-    }
-  ],
-  "crons": [
-    {
-      "path": "/api/hotspots/refresh",
-      "schedule": "0 3 * * *"
     }
   ],
   "env": {

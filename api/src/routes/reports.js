@@ -6,7 +6,9 @@ const { uploadBuffer } = require('../storage');
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
-// POST /api/reports — submit a new report
+const RANGE_TO_CAT_COUNT = { '1-3': 2, '4-10': 7, '10+': 15, 'unknown': null };
+
+// POST /api/reports — submit a new report (mock-spec fields)
 router.post('/', async (req, res) => {
   const {
     reporter_id,
@@ -16,20 +18,26 @@ router.post('/', async (req, res) => {
     source = 'web',
     notes,
     is_anonymous = false,
-    // sighting_details fields
-    cat_count,
-    has_ear_cut,
-    has_kitten,
+    problem_types,
+    cat_count_range,
+    ear_cut_status,
+    kitten_status,
     behavior,
     behavior_notes,
-    // involvement
     involvement_level,
-    funding_willing,
+    funding_level,
+    funding_amount,
+    requests,
   } = req.body;
 
-  if (!longitude || !latitude) {
+  if (longitude == null || latitude == null) {
     return res.status(400).json({ error: 'longitude and latitude are required' });
   }
+
+  // Derive legacy/aggregation-friendly fields
+  const catCount = cat_count_range ? RANGE_TO_CAT_COUNT[cat_count_range] ?? null : null;
+  const hasKitten = kitten_status === 'present';
+  const hasEarCut = ear_cut_status === 'all' || ear_cut_status === 'some';
 
   const client = await db.getClient();
   try {
@@ -39,46 +47,84 @@ router.post('/', async (req, res) => {
       `INSERT INTO reports (reporter_id, location, reported_at, source, notes, is_anonymous)
        VALUES ($1, ST_SetSRID(ST_MakePoint($2, $3), 4326)::geography, $4, $5, $6, $7)
        RETURNING id`,
-      [
-        reporter_id || null,
-        longitude,
-        latitude,
-        reported_at || new Date(),
-        source,
-        notes || null,
-        is_anonymous,
-      ]
+      [reporter_id || null, longitude, latitude, reported_at || new Date(), source, notes || null, is_anonymous]
     );
-
     const reportId = reportResult.rows[0].id;
 
     await client.query(
       `INSERT INTO sighting_details
-         (report_id, cat_count, has_ear_cut, has_kitten, behavior, behavior_notes, additional_info)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+         (report_id, cat_count, behavior, behavior_notes,
+          problem_types, cat_count_range, ear_cut_status, kitten_status,
+          involvement_level, funding_level, funding_amount, requests,
+          has_kitten, has_ear_cut)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
       [
         reportId,
-        cat_count || null,
-        has_ear_cut ?? null,
-        has_kitten ?? null,
+        catCount,
         behavior || null,
         behavior_notes || null,
-        JSON.stringify({ involvement_level: involvement_level || null, funding_willing: funding_willing ?? null }),
+        Array.isArray(problem_types) && problem_types.length > 0 ? problem_types : null,
+        cat_count_range || null,
+        ear_cut_status || null,
+        kitten_status || null,
+        involvement_level || null,
+        funding_level || null,
+        funding_amount != null && funding_amount !== '' ? Number(funding_amount) : null,
+        Array.isArray(requests) && requests.length > 0 ? requests : null,
+        kitten_status ? hasKitten : null,
+        ear_cut_status ? hasEarCut : null,
       ]
     );
 
-    // Lightweight merge: assign to nearest active hotspot within 100m
-    await client.query(
+    // Try to link to nearest active hotspot within 100m
+    const linkResult = await client.query(
       `INSERT INTO hotspot_reports (hotspot_id, report_id)
        SELECT h.id, $1
        FROM hotspots h
        WHERE ST_DWithin(h.centroid, ST_SetSRID(ST_MakePoint($2, $3), 4326)::geography, 100)
-         AND h.status = 'active'
+         AND h.status IN ('active', 'monitoring', 'high_priority')
        ORDER BY ST_Distance(h.centroid, ST_SetSRID(ST_MakePoint($2, $3), 4326)::geography)
        LIMIT 1
-       ON CONFLICT DO NOTHING`,
+       ON CONFLICT DO NOTHING
+       RETURNING hotspot_id`,
       [reportId, longitude, latitude]
     );
+
+    if (linkResult.rowCount > 0) {
+      await client.query(
+        `UPDATE hotspots SET
+           report_count = report_count + 1,
+           last_seen_at = NOW(),
+           cat_count_estimate = COALESCE(cat_count_estimate, 0) + $1,
+           has_kitten = has_kitten OR $2,
+           has_ear_cut_visible = has_ear_cut_visible OR $3,
+           updated_at = NOW()
+         WHERE id = $4`,
+        [catCount || 0, hasKitten, hasEarCut, linkResult.rows[0].hotspot_id]
+      );
+    } else {
+      const newHs = await client.query(
+        `INSERT INTO hotspots
+           (centroid, radius_meters, report_count,
+            first_seen_at, last_seen_at,
+            cat_count_estimate, has_kitten, has_ear_cut_visible,
+            status, created_at, updated_at)
+         VALUES (ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography, 100, 1,
+                 NOW(), NOW(), $3, $4, $5, $6, NOW(), NOW())
+         RETURNING id`,
+        [
+          longitude, latitude,
+          catCount || 1,
+          hasKitten,
+          hasEarCut,
+          hasKitten ? 'high_priority' : 'monitoring',
+        ]
+      );
+      await client.query(
+        `INSERT INTO hotspot_reports (hotspot_id, report_id) VALUES ($1, $2)`,
+        [newHs.rows[0].id, reportId]
+      );
+    }
 
     await client.query('COMMIT');
     res.status(201).json({ id: reportId });
@@ -91,7 +137,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-// GET /api/reports — list reports with optional filters
+// GET /api/reports — list reports with mock-spec fields
 router.get('/', async (req, res) => {
   const { status, limit = 50, offset = 0 } = req.query;
 
@@ -106,20 +152,29 @@ router.get('/', async (req, res) => {
       r.notes,
       r.is_anonymous,
       sd.cat_count,
-      sd.has_ear_cut,
-      sd.has_kitten,
+      sd.cat_count_range,
+      sd.ear_cut_status,
+      sd.kitten_status,
+      sd.problem_types,
+      sd.requests,
+      sd.involvement_level,
+      sd.funding_level,
+      sd.funding_amount,
       sd.behavior,
-      sd.additional_info
+      sd.has_kitten,
+      sd.has_ear_cut,
+      COALESCE(
+        (SELECT array_agg(m.url ORDER BY m.created_at) FROM media m WHERE m.report_id = r.id),
+        ARRAY[]::VARCHAR[]
+      ) AS media_urls
     FROM reports r
     LEFT JOIN sighting_details sd ON r.id = sd.report_id
   `;
   const params = [];
-
   if (status) {
     params.push(status);
     query += ` WHERE r.status = $${params.length}`;
   }
-
   query += ` ORDER BY r.reported_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
   params.push(limit, offset);
 
@@ -132,24 +187,17 @@ router.get('/', async (req, res) => {
   }
 });
 
-// POST /api/reports/:id/media — upload image for a report
 router.post('/:id/media', upload.single('image'), async (req, res) => {
   const { id } = req.params;
-
-  if (!req.file) {
-    return res.status(400).json({ error: 'image file is required' });
-  }
+  if (!req.file) return res.status(400).json({ error: 'image file is required' });
 
   try {
     const url = await uploadBuffer(req.file.buffer, req.file.mimetype);
-
     const result = await db.query(
       `INSERT INTO media (report_id, url, media_type, taken_at)
-       VALUES ($1, $2, $3, $4)
-       RETURNING id, url`,
+       VALUES ($1, $2, $3, $4) RETURNING id, url`,
       [id, url, req.file.mimetype, new Date()]
     );
-
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error(err);
@@ -157,16 +205,13 @@ router.post('/:id/media', upload.single('image'), async (req, res) => {
   }
 });
 
-// PATCH /api/reports/:id/status — update report status
 router.patch('/:id/status', async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
-
   const allowed = ['pending', 'processed', 'discarded'];
   if (!allowed.includes(status)) {
     return res.status(400).json({ error: `status must be one of: ${allowed.join(', ')}` });
   }
-
   try {
     const result = await db.query(
       `UPDATE reports SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING id, status`,

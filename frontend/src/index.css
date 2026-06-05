@@ -1,0 +1,68 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body, #root {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  background: #f0f2f5;
+  color: #1a1a1a;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: opacity 0.15s;
+}
+button:hover:not(:disabled) { opacity: 0.85; }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+input[type="text"], input[type="number"], textarea, select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  background: #fff;
+  transition: border-color 0.15s;
+}
+input:focus, textarea:focus, select:focus { border-color: #4a90d9; box-shadow: 0 0 0 2px rgba(74,144,217,0.15); }
+
+label { font-size: 12px; font-weight: 600; color: #666; display: block; margin-bottom: 4px; }
+
+/* User current-location marker (Google Maps-style blue dot with pulsing ring) */
+.user-location-marker { background: transparent; border: none; pointer-events: none; }
+
+.user-location-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  background: #4285f4;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+}
+
+.user-location-pulse {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 22px;
+  height: 22px;
+  margin: -11px 0 0 -11px;
+  background: rgba(66, 133, 244, 0.4);
+  border-radius: 50%;
+  animation: user-location-pulse 1.8s ease-out infinite;
+}
+
+@keyframes user-location-pulse {
+  0% { transform: scale(0.6); opacity: 0.8; }
+  100% { transform: scale(2.4); opacity: 0; }
+}

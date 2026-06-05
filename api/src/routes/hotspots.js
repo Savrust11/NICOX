@@ -3,9 +3,18 @@ const db = require('../db');
 
 const router = express.Router();
 
-// GET /api/hotspots — list all active hotspots with summary
+// GET /api/hotspots — list active hotspots with summary
+// By default returns all non-resolved hotspots
 router.get('/', async (req, res) => {
-  const { status = 'active' } = req.query;
+  const { status } = req.query;
+  const params = [];
+  let whereClause;
+  if (status) {
+    params.push(status);
+    whereClause = `WHERE h.status = $1`;
+  } else {
+    whereClause = `WHERE h.status NOT IN ('resolved', 'discarded')`;
+  }
 
   try {
     const result = await db.query(
@@ -26,10 +35,10 @@ router.get('/', async (req, res) => {
          MAX(i.performed_at) AS last_intervention_at
        FROM hotspots h
        LEFT JOIN interventions i ON h.id = i.hotspot_id AND i.status = 'completed'
-       WHERE h.status = $1
+       ${whereClause}
        GROUP BY h.id
        ORDER BY h.last_seen_at DESC`,
-      [status]
+      params
     );
     res.json({ hotspots: result.rows });
   } catch (err) {
@@ -60,10 +69,22 @@ router.get('/:id', async (req, res) => {
            r.reported_at,
            r.source,
            r.status,
+           r.notes,
            sd.cat_count,
+           sd.cat_count_range,
+           sd.ear_cut_status,
+           sd.kitten_status,
+           sd.problem_types,
+           sd.requests,
+           sd.involvement_level,
+           sd.funding_level,
+           sd.funding_amount,
            sd.has_ear_cut,
            sd.has_kitten,
-           sd.additional_info
+           COALESCE(
+             (SELECT array_agg(m.url ORDER BY m.created_at) FROM media m WHERE m.report_id = r.id),
+             ARRAY[]::VARCHAR[]
+           ) AS media_urls
          FROM hotspot_reports hr
          JOIN reports r ON hr.report_id = r.id
          LEFT JOIN sighting_details sd ON r.id = sd.report_id
