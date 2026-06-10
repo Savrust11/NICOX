@@ -1,0 +1,113 @@
+.public-stats {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 20px 60px;
+  background: linear-gradient(180deg, #f0f5ff 0%, #f7fafc 60%);
+}
+
+.ps-hero {
+  max-width: 900px;
+  margin: 0 auto 28px;
+  text-align: center;
+}
+.ps-hero h1 {
+  font-size: 28px;
+  font-weight: 800;
+  color: #1a1a1a;
+  margin-bottom: 8px;
+}
+.ps-hero p {
+  font-size: 15px;
+  color: #666;
+}
+
+.ps-section {
+  max-width: 900px;
+  margin: 0 auto 28px;
+  background: #fff;
+  border-radius: 14px;
+  padding: 22px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+}
+.ps-section h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 17px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 16px;
+}
+
+.ps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.ps-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: #fafbfc;
+  border-radius: 10px;
+  border-left: 4px solid #ccc;
+}
+.ps-card-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border-radius: 8px;
+}
+.ps-card-value {
+  font-size: 24px;
+  font-weight: 800;
+  color: #1a1a1a;
+  line-height: 1;
+}
+.ps-card-label {
+  font-size: 12px;
+  color: #777;
+  margin-top: 4px;
+}
+
+.ps-cta {
+  max-width: 720px;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 14px;
+  padding: 24px;
+  text-align: center;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+}
+.ps-cta h2 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.ps-cta p {
+  font-size: 14px;
+  color: #555;
+  line-height: 1.7;
+  margin-bottom: 18px;
+}
+.ps-signin-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #1a73e8;
+  color: #fff;
+  padding: 12px 24px;
+  border-radius: 999px;
+  font-size: 15px;
+}
+
+.ps-loading, .ps-error {
+  font-size: 13px;
+  color: #888;
+}
+.ps-error { color: #d93025; }

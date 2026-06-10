@@ -4,20 +4,20 @@ import 'leaflet/dist/leaflet.css'
 import { Camera, CheckCircle2, MapPin, X } from 'lucide-react'
 import { api } from '../lib/api'
 import { compressImage, formatBytes } from '../lib/compress'
+import { getInitialView, saveView, tryGeolocate } from '../lib/viewState'
 import './ReportForm.css'
 
 const LOCATE_ICON_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2v4"/><path d="M12 18v4"/><path d="M2 12h4"/><path d="M18 12h4"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>'
 
 const TILE_URL = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'
 const TILE_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>'
-const DEFAULT_CENTER = [35.6814, 139.7670]
 
 const PROBLEM_TYPES = [
-  { value: 'waste', label: '糞尿' },
-  { value: 'kittens', label: '子猫' },
-  { value: 'noise', label: '鳴き声' },
-  { value: 'unfixed', label: '未手術猫' },
-  { value: 'feeding', label: '餌やり問題' },
+  { value: 'waste_damage', label: '糞尿被害' },
+  { value: 'noise_damage', label: '鳴き声被害' },
+  { value: 'cats_increasing', label: '猫が増えている' },
+  { value: 'hoarding_site', label: '多頭飼育現場がある' },
+  { value: 'feeding_issue', label: '餌やりトラブル' },
 ]
 
 const CAT_COUNT_RANGES = [
@@ -54,8 +54,10 @@ const FUNDING_LEVELS = [
 
 const REQUESTS = [
   { value: 'reduce_damage', label: '被害を減らしたい' },
-  { value: 'want_surgery', label: '手術したい' },
-  { value: 'immediate', label: 'すぐ対応してほしい' },
+  { value: 'reduce_cats', label: '猫を減らしたい' },
+  { value: 'want_surgery', label: '手術をしたい' },
+  { value: 'consult', label: '相談したい' },
+  { value: 'volunteer', label: '活動に協力したい' },
 ]
 
 const INITIAL_FIELDS = {
@@ -129,15 +131,33 @@ export default function ReportForm({ onSuccess }) {
 
   const [location, setLocation] = useState(null)
   const [fields, setFields] = useState(INITIAL_FIELDS)
-  const [photo, setPhoto] = useState(null)
-  const [photoPreview, setPhotoPreview] = useState(null)
+  const [photos, setPhotos] = useState([])  // [{ file, preview }]
   const [status, setStatus] = useState('idle')
   const [errorMsg, setErrorMsg] = useState('')
 
   useEffect(() => {
     if (map.current || !mapContainer.current) return
-    map.current = L.map(mapContainer.current).setView(DEFAULT_CENTER, 13)
+    const initial = getInitialView()
+    map.current = L.map(mapContainer.current).setView(initial.center, initial.zoom)
     L.tileLayer(TILE_URL, { attribution: TILE_ATTR, maxZoom: 19 }).addTo(map.current)
+
+    // If no saved position, try GPS once
+    if (!localStorage.getItem('nicox:mapView')) {
+      tryGeolocate().then((view) => {
+        if (view && map.current) {
+          map.current.setView(view.center, view.zoom)
+          saveView(view.center, view.zoom)
+        }
+      })
+    }
+
+    // Persist position on user-driven move/zoom
+    const persist = () => {
+      const c = map.current.getCenter()
+      saveView([c.lat, c.lng], map.current.getZoom())
+    }
+    map.current.on('moveend', persist)
+    map.current.on('zoomend', persist)
 
     const locateBtn = L.control({ position: 'topright' })
     locateBtn.onAdd = () => {
@@ -202,24 +222,34 @@ export default function ReportForm({ onSuccess }) {
   const resetForm = useCallback(() => {
     setLocation(null)
     setFields(INITIAL_FIELDS)
-    setPhoto(null)
-    setPhotoPreview(null)
+    photos.forEach((p) => URL.revokeObjectURL(p.preview))
+    setPhotos([])
     setStatus('idle')
     setErrorMsg('')
     if (marker.current) {
       marker.current.remove()
       marker.current = null
     }
-  }, [])
+  }, [photos])
 
   async function handlePhotoChange(e) {
-    const file = e.target.files[0]
-    if (!file) return
+    const files = Array.from(e.target.files || [])
+    if (files.length === 0) return
+    e.target.value = '' // allow re-selecting the same file
     setStatus('compressing')
-    const compressed = await compressImage(file)
-    setPhoto(compressed)
-    setPhotoPreview(URL.createObjectURL(compressed))
+    const compressedList = await Promise.all(files.map((f) => compressImage(f)))
+    const newItems = compressedList.map((file) => ({ file, preview: URL.createObjectURL(file) }))
+    setPhotos((prev) => [...prev, ...newItems])
     setStatus('idle')
+  }
+
+  function removePhoto(idx) {
+    setPhotos((prev) => {
+      const next = [...prev]
+      const removed = next.splice(idx, 1)[0]
+      if (removed) URL.revokeObjectURL(removed.preview)
+      return next
+    })
   }
 
   function set(key, value) {
@@ -264,7 +294,10 @@ export default function ReportForm({ onSuccess }) {
         requests: fields.requests,
         is_anonymous: fields.is_anonymous,
       })
-      if (photo) await api.uploadMedia(id, photo)
+      // Upload photos sequentially to keep things simple and respect serverless limits
+      for (const p of photos) {
+        await api.uploadMedia(id, p.file)
+      }
       setStatus('success')
     } catch (err) {
       setErrorMsg(err.message)
@@ -381,29 +414,32 @@ export default function ReportForm({ onSuccess }) {
           </div>
           <div className="field photo-field">
             <div className="photo-label-side">
-              <label>写真（任意）</label>
+              <label>写真（任意・複数可）</label>
               <div className="photo-info">
                 {status === 'compressing' && <p className="hint">圧縮中...</p>}
-                {photo && <p className="hint">{formatBytes(photo.size)}</p>}
+                {photos.length > 0 && (
+                  <p className="hint">
+                    {photos.length} 枚 / {formatBytes(photos.reduce((sum, p) => sum + p.file.size, 0))}
+                  </p>
+                )}
               </div>
             </div>
-            <div className="photo-square">
-              {photoPreview ? (
-                <div className="photo-square-img">
-                  <img src={photoPreview} alt="preview" />
+            <div className="photo-grid">
+              {photos.map((p, idx) => (
+                <div key={p.preview} className="photo-square-img">
+                  <img src={p.preview} alt={`preview ${idx + 1}`} />
                   <button type="button" className="photo-remove"
-                    onClick={() => { setPhoto(null); setPhotoPreview(null) }}
+                    onClick={() => removePhoto(idx)}
                     aria-label="写真を削除">
                     <X size={14} strokeWidth={2.5} />
                   </button>
                 </div>
-              ) : (
-                <label className="photo-square-add">
-                  <Camera size={28} strokeWidth={1.6} />
-                  <span>追加</span>
-                  <input type="file" accept="image/*" capture="environment" onChange={handlePhotoChange} hidden />
-                </label>
-              )}
+              ))}
+              <label className="photo-square-add">
+                <Camera size={28} strokeWidth={1.6} />
+                <span>追加</span>
+                <input type="file" accept="image/*" capture="environment" multiple onChange={handlePhotoChange} hidden />
+              </label>
             </div>
           </div>
         </div>

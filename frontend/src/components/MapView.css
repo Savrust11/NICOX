@@ -1,9 +1,15 @@
 .map-view {
   position: relative;
   overflow: hidden;
-  height: calc(100vh - 52px);
-  height: calc(100dvh - 52px);
+  height: calc(100vh - 60px);
+  height: calc(100dvh - 60px);
   width: 100%;
+}
+@media (max-width: 600px) {
+  .map-view {
+    height: calc(100vh - 56px);
+    height: calc(100dvh - 56px);
+  }
 }
 
 .map-container {

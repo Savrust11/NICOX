@@ -1,11 +1,11 @@
 const express = require('express');
 const db = require('../db');
+const { requireAuth, requireApproved, requireRole } = require('../auth');
 
 const router = express.Router();
 
-// GET /api/hotspots — list active hotspots with summary
-// By default returns all non-resolved hotspots
-router.get('/', async (req, res) => {
+// GET /api/hotspots — list active hotspots with summary (approved members and admins)
+router.get('/', requireAuth, requireApproved, async (req, res) => {
   const { status } = req.query;
   const params = [];
   let whereClause;
@@ -48,7 +48,7 @@ router.get('/', async (req, res) => {
 });
 
 // GET /api/hotspots/:id — single hotspot with its reports
-router.get('/:id', async (req, res) => {
+router.get('/:id', requireAuth, requireApproved, async (req, res) => {
   const { id } = req.params;
 
   try {
@@ -103,8 +103,8 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// PATCH /api/hotspots/:id/status — update hotspot status
-router.patch('/:id/status', async (req, res) => {
+// PATCH /api/hotspots/:id/status — update hotspot status (admin)
+router.patch('/:id/status', requireAuth, requireRole('admin'), async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
 
@@ -126,8 +126,8 @@ router.patch('/:id/status', async (req, res) => {
   }
 });
 
-// POST /api/hotspots/refresh — manually trigger hotspot recalculation
-router.post('/refresh', async (req, res) => {
+// POST /api/hotspots/refresh — manually trigger hotspot recalculation (admin)
+router.post('/refresh', requireAuth, requireRole('admin'), async (req, res) => {
   const { days_back = 30, cluster_radius_meters = 100 } = req.body;
 
   try {

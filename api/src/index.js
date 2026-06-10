@@ -5,6 +5,9 @@ const cors = require('cors');
 
 const reportsRouter = require('./routes/reports');
 const hotspotsRouter = require('./routes/hotspots');
+const authRouter = require('./routes/auth');
+const statsRouter = require('./routes/stats');
+const { loadUser } = require('./auth');
 
 const app = express();
 
@@ -17,10 +20,15 @@ app.use('/api', (req, res, next) => {
   next();
 });
 
+// Attach req.user (or null) on every /api request
+app.use('/api', loadUser);
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+app.use('/api/auth', authRouter);
+app.use('/api/stats', statsRouter);
 app.use('/api/reports', reportsRouter);
 app.use('/api/hotspots', hotspotsRouter);
 

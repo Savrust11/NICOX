@@ -2,6 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const db = require('../db');
 const { uploadBuffer } = require('../storage');
+const { requireAuth, requireApproved, requireRole } = require('../auth');
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -137,8 +138,8 @@ router.post('/', async (req, res) => {
   }
 });
 
-// GET /api/reports — list reports with mock-spec fields
-router.get('/', async (req, res) => {
+// GET /api/reports — approved members and admins only
+router.get('/', requireAuth, requireApproved, async (req, res) => {
   const { status, limit = 50, offset = 0 } = req.query;
 
   let query = `
@@ -205,7 +206,7 @@ router.post('/:id/media', upload.single('image'), async (req, res) => {
   }
 });
 
-router.patch('/:id/status', async (req, res) => {
+router.patch('/:id/status', requireAuth, requireRole('admin'), async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
   const allowed = ['pending', 'processed', 'discarded'];

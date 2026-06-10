@@ -3,14 +3,13 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { AlertTriangle, Baby, CircleAlert, CircleCheck, RefreshCw, X } from 'lucide-react'
 import { api } from '../lib/api'
+import { getInitialView, saveView, tryGeolocate } from '../lib/viewState'
 import './MapView.css'
 
 const LOCATE_ICON_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2v4"/><path d="M12 18v4"/><path d="M2 12h4"/><path d="M18 12h4"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>'
 
 const TILE_URL = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'
 const TILE_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>'
-const DEFAULT_CENTER = [35.6814, 139.7670]
-const DEFAULT_ZOOM = 13
 
 function hotspotColor(h) {
   if (h.has_kitten) return '#e74c3c'
@@ -69,8 +68,24 @@ function escapeHtml(str) {
   return (str || '').replace(/[<>&"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]))
 }
 
-const PROBLEM_LABELS = { waste: '糞尿', kittens: '子猫', noise: '鳴き声', unfixed: '未手術猫', feeding: '餌やり問題' }
-const REQUEST_LABELS = { reduce_damage: '被害を減らしたい', want_surgery: '手術したい', immediate: 'すぐ対応してほしい' }
+const PROBLEM_LABELS = {
+  waste_damage: '糞尿被害',
+  noise_damage: '鳴き声被害',
+  cats_increasing: '猫が増えている',
+  hoarding_site: '多頭飼育現場がある',
+  feeding_issue: '餌やりトラブル',
+  // legacy
+  waste: '糞尿', kittens: '子猫', noise: '鳴き声', unfixed: '未手術猫', feeding: '餌やり問題',
+}
+const REQUEST_LABELS = {
+  reduce_damage: '被害を減らしたい',
+  reduce_cats: '猫を減らしたい',
+  want_surgery: '手術をしたい',
+  consult: '相談したい',
+  volunteer: '活動に協力したい',
+  // legacy
+  immediate: 'すぐ対応してほしい',
+}
 const RANGE_LABELS = { '1-3': '1〜3匹', '4-10': '4〜10匹', '10+': '10匹以上', 'unknown': '不明' }
 const KITTEN_LABELS = { present: 'いる', absent: 'いない', unknown: '不明' }
 const EARCUT_LABELS = { all: '全てあり', some: '一部あり', none: 'なし', unknown: '不明' }
@@ -158,8 +173,26 @@ export default function MapView() {
 
   useEffect(() => {
     if (map.current || !mapContainer.current) return
-    map.current = L.map(mapContainer.current).setView(DEFAULT_CENTER, DEFAULT_ZOOM)
+    const initial = getInitialView()
+    map.current = L.map(mapContainer.current).setView(initial.center, initial.zoom)
     L.tileLayer(TILE_URL, { attribution: TILE_ATTR, maxZoom: 19 }).addTo(map.current)
+
+    // First-time GPS centering if no saved position yet
+    if (!localStorage.getItem('nicox:mapView')) {
+      tryGeolocate().then((view) => {
+        if (view && map.current) {
+          map.current.setView(view.center, view.zoom)
+          saveView(view.center, view.zoom)
+        }
+      })
+    }
+
+    const persist = () => {
+      const c = map.current.getCenter()
+      saveView([c.lat, c.lng], map.current.getZoom())
+    }
+    map.current.on('moveend', persist)
+    map.current.on('zoomend', persist)
 
     const locateBtn = L.control({ position: 'topright' })
     locateBtn.onAdd = () => {
