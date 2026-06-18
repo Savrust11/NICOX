@@ -21,7 +21,7 @@ button {
 button:hover:not(:disabled) { opacity: 0.85; }
 button:disabled { opacity: 0.45; cursor: not-allowed; }
 
-input[type="text"], input[type="number"], textarea, select {
+input[type="text"], input[type="number"], input[type="email"], input[type="password"], input[type="tel"], input[type="url"], input[type="search"], textarea, select {
   width: 100%;
   padding: 11px 14px;
   border: 1px solid #d9d9d9;
@@ -31,6 +31,7 @@ input[type="text"], input[type="number"], textarea, select {
   background: #fff;
   transition: border-color 0.15s;
   min-height: 44px;
+  font-family: inherit;
 }
 input:focus, textarea:focus, select:focus { border-color: #4a90d9; box-shadow: 0 0 0 2px rgba(74,144,217,0.15); }
 

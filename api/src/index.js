@@ -7,6 +7,7 @@ const reportsRouter = require('./routes/reports');
 const hotspotsRouter = require('./routes/hotspots');
 const authRouter = require('./routes/auth');
 const statsRouter = require('./routes/stats');
+const adminRouter = require('./routes/admin');
 const { loadUser } = require('./auth');
 
 const app = express();
@@ -31,6 +32,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/stats', statsRouter);
 app.use('/api/reports', reportsRouter);
 app.use('/api/hotspots', hotspotsRouter);
+app.use('/api/admin', adminRouter);
 
 // Serve React SPA
 const publicDir = path.join(__dirname, '..', 'public');

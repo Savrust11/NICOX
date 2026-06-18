@@ -165,6 +165,25 @@ CREATE TABLE IF NOT EXISTS cats (
 CREATE INDEX IF NOT EXISTS idx_cats_hotspot_id ON cats(hotspot_id);
 
 -- ============================================================================
+-- LAYER 4: Admin Audit Log
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS audit_log (
+  id BIGSERIAL PRIMARY KEY,
+  actor_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  actor_email VARCHAR(255),
+  action VARCHAR(100) NOT NULL,
+  target_type VARCHAR(50),
+  target_id VARCHAR(64),
+  details JSONB,
+  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON audit_log(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_log_actor ON audit_log(actor_user_id);
+CREATE INDEX IF NOT EXISTS idx_audit_log_action ON audit_log(action);
+
+-- ============================================================================
 -- FUNCTION: refresh_hotspots (daily batch)
 -- Uses DBSCAN for density-based clustering (no need to specify k upfront)
 -- ============================================================================
