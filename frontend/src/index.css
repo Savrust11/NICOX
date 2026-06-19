@@ -8,6 +8,10 @@ html, body, #root {
   color: #1a1a1a;
 }
 
+#root {
+  background: #f5f7fa;
+}
+
 button {
   cursor: pointer;
   border: none;
