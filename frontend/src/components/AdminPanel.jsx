@@ -114,6 +114,7 @@ function DashboardSection() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState('')
+  const [openReportId, setOpenReportId] = useState(null)
 
   const load = useCallback(async () => {
     setLoading(true); setErr('')
@@ -180,20 +181,44 @@ function DashboardSection() {
       <div className="admin-section">
         <h3 className="subhead">直近の通報</h3>
         <ul className="admin-list">
-          {data.recent_reports.map((r) => (
-            <li key={r.id} className="admin-row">
-              <div className="admin-row-info">
-                <div className="admin-row-name">#{r.id} — {r.reporter_name}</div>
-                <div className="admin-row-meta">
-                  <span>{new Date(r.reported_at).toLocaleString('ja-JP')}</span>
-                  <span>状態: {tr(LABEL.reportStatus, r.status)}</span>
-                  <span>{r.latitude?.toFixed(4)}, {r.longitude?.toFixed(4)}</span>
+          {data.recent_reports.map((r) => {
+            const latStr = r.latitude != null ? `${Math.abs(r.latitude).toFixed(4)}°${r.latitude >= 0 ? 'N' : 'S'}` : ''
+            const lngStr = r.longitude != null ? `${Math.abs(r.longitude).toFixed(4)}°${r.longitude >= 0 ? 'E' : 'W'}` : ''
+            return (
+              <li
+                key={r.id}
+                className="admin-row admin-row-clickable"
+                onClick={() => setOpenReportId(r.id)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter') setOpenReportId(r.id) }}
+              >
+                <div className="admin-row-info">
+                  <div className="admin-row-name">
+                    {r.id} — {r.reporter_name}
+                    <span className={`pill pill-${r.status}`}>{tr(LABEL.reportStatus, r.status)}</span>
+                    {r.photo_count > 0 && <span className="pill">📷 {r.photo_count}</span>}
+                    {r.area_name && <span className="pill">{r.area_name}</span>}
+                  </div>
+                  <div className="admin-row-meta">
+                    <span>{new Date(r.reported_at).toLocaleString('ja-JP')}</span>
+                    {r.problem_types?.length > 0 && <span>問題: {r.problem_types.join('、')}</span>}
+                    <span>{latStr}, {lngStr}</span>
+                  </div>
                 </div>
-              </div>
-            </li>
-          ))}
+              </li>
+            )
+          })}
         </ul>
       </div>
+
+      {openReportId && (
+        <ReportDetailModal
+          id={openReportId}
+          onClose={() => setOpenReportId(null)}
+          onChanged={load}
+        />
+      )}
 
       <div className="admin-section">
         <h3 className="subhead">月間 通報数 上位ユーザー</h3>

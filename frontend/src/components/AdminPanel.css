@@ -206,6 +206,16 @@
 
 .admin-row-info { flex: 1; min-width: 0; }
 
+.admin-row-clickable {
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, transform 0.12s;
+}
+.admin-row-clickable:hover {
+  background: #f0f4ff;
+  border-color: #c7d6f5;
+}
+.admin-row-clickable:active { transform: scale(0.997); }
+
 .admin-row-name {
   font-size: 14px;
   font-weight: 700;

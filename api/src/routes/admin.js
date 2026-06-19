@@ -62,8 +62,12 @@ router.get('/dashboard', async (_req, res) => {
         SELECT r.id, r.reported_at, r.status,
           ST_X(r.location::geometry) AS longitude,
           ST_Y(r.location::geometry) AS latitude,
-          COALESCE(u.name, '匿名') AS reporter_name
+          sd.problem_types,
+          COALESCE(u.name, '匿名') AS reporter_name,
+          (SELECT COUNT(*)::int FROM media m WHERE m.report_id = r.id) AS photo_count,
+          (SELECT a.name FROM areas a WHERE ST_Contains(a.geometry, r.location::geometry) LIMIT 1) AS area_name
         FROM reports r
+        LEFT JOIN sighting_details sd ON sd.report_id = r.id
         LEFT JOIN users u ON r.reporter_id = u.id
         ORDER BY r.reported_at DESC LIMIT 10
       `),
