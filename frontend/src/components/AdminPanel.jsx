@@ -16,6 +16,15 @@ const LABEL = {
   reportStatus: { pending: '未対応', processed: '対応済み', discarded: '破棄' },
   hotspotStatus: { active: '活動中', monitoring: '監視中', high_priority: '高優先', resolved: '解決済み' },
   areaType: { district: '地区', ward: '区', city: '市', custom: 'カスタム' },
+  catCount: { '1-3': '1〜3', '4-10': '4〜10', '10+': '10以上', unknown: '不明' },
+  earCut: { all: '全てあり', some: '一部あり', none: 'なし', unknown: '不明' },
+  kittenStatus: { present: 'いる', absent: 'いない', unknown: '不明' },
+}
+const fmtCoord = (lat, lng) => {
+  if (lat == null || lng == null) return '-'
+  const ns = lat >= 0 ? 'N' : 'S'
+  const ew = lng >= 0 ? 'E' : 'W'
+  return `${Math.abs(lat).toFixed(4)}°${ns}, ${Math.abs(lng).toFixed(4)}°${ew}`
 }
 const tr = (map, v) => map[v] ?? v
 
@@ -639,7 +648,7 @@ function ReportDetailModal({ id, onClose, onChanged }) {
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h3>通報 #{id} 詳細</h3>
+          <h3>通報 {id} 詳細</h3>
           <button onClick={onClose}><X size={18} /></button>
         </div>
         {err && <p className="admin-error">{err}</p>}
@@ -648,11 +657,12 @@ function ReportDetailModal({ id, onClose, onChanged }) {
           <div className="modal-body">
             <DetailKV label="通報者"     value={`${data.report.reporter_name || '匿名'} (${data.report.reporter_email || '-'})`} />
             <DetailKV label="通報日時"   value={new Date(data.report.reported_at).toLocaleString('ja-JP')} />
-            <DetailKV label="ステータス" value={tr(LABEL.reportStatus, data.report.status)} />
-            <DetailKV label="座標"       value={`${data.report.latitude?.toFixed(6)}, ${data.report.longitude?.toFixed(6)}`} />
-            <DetailKV label="頭数"       value={data.report.cat_count_range || '-'} />
-            <DetailKV label="耳カット"   value={data.report.ear_cut_status || '-'} />
-            <DetailKV label="子猫"       value={data.report.kitten_status || '-'} />
+            <DetailKV label="ステータス" value={<span className={`pill pill-${data.report.status}`}>{tr(LABEL.reportStatus, data.report.status)}</span>} />
+            <DetailKV label="エリア"     value={data.report.area_name || '(エリア外)'} />
+            <DetailKV label="座標"       value={fmtCoord(data.report.latitude, data.report.longitude)} />
+            <DetailKV label="頭数"       value={data.report.cat_count_range ? tr(LABEL.catCount, data.report.cat_count_range) : '-'} />
+            <DetailKV label="耳カット"   value={data.report.ear_cut_status ? tr(LABEL.earCut, data.report.ear_cut_status) : '-'} />
+            <DetailKV label="子猫"       value={data.report.kitten_status ? tr(LABEL.kittenStatus, data.report.kitten_status) : '-'} />
             <DetailKV label="行動"       value={data.report.behavior || '-'} />
             <DetailKV label="問題"       value={(data.report.problem_types || []).join(', ') || '-'} />
             <DetailKV label="要望"       value={(data.report.requests || []).join(', ') || '-'} />

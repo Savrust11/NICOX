@@ -273,7 +273,8 @@ router.get('/reports/:id', async (req, res) => {
       db.query(
         `SELECT r.*, ST_X(r.location::geometry) AS longitude, ST_Y(r.location::geometry) AS latitude,
                 sd.*,
-                u.name AS reporter_name, u.email AS reporter_email, u.phone AS reporter_phone
+                u.name AS reporter_name, u.email AS reporter_email, u.phone AS reporter_phone,
+                (SELECT a.name FROM areas a WHERE ST_Contains(a.geometry, r.location::geometry) LIMIT 1) AS area_name
          FROM reports r
          LEFT JOIN sighting_details sd ON sd.report_id = r.id
          LEFT JOIN users u ON r.reporter_id = u.id
