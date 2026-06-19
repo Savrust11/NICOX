@@ -31,6 +31,12 @@ const FIELD_LABEL = {
   description: '説明',
   organization: '所属',
   phone: '電話',
+  count: '件数',
+  filter: '条件',
+  from: '開始日',
+  to: '終了日',
+  has_photo: '写真あり',
+  q: '検索語',
 }
 const FIELD_VALUE_MAP = {
   status: LABEL.reportStatus,
@@ -38,19 +44,23 @@ const FIELD_VALUE_MAP = {
   approval_status: LABEL.approval,
   area_type: LABEL.areaType,
 }
+function formatAuditValue(k, v) {
+  if (v === null || v === undefined || v === '') return '-'
+  if (typeof v === 'boolean') return v ? 'はい' : 'いいえ'
+  if (Array.isArray(v)) return v.length ? v.join(', ') : '(なし)'
+  if (typeof v === 'object') {
+    const inner = formatAuditDetails(v)
+    return inner ? `(${inner})` : '(なし)'
+  }
+  if (FIELD_VALUE_MAP[k]) return tr(FIELD_VALUE_MAP[k], v)
+  return String(v)
+}
 function formatAuditDetails(details) {
   if (!details || typeof details !== 'object') return ''
   const parts = []
   for (const [k, v] of Object.entries(details)) {
     const label = FIELD_LABEL[k] ?? k
-    let display
-    if (v === null || v === undefined) display = '-'
-    else if (typeof v === 'boolean') display = v ? 'はい' : 'いいえ'
-    else if (Array.isArray(v)) display = v.length ? v.join(', ') : '(なし)'
-    else if (typeof v === 'object') display = JSON.stringify(v)
-    else if (FIELD_VALUE_MAP[k]) display = tr(FIELD_VALUE_MAP[k], v)
-    else display = String(v)
-    parts.push(`${label}: ${display}`)
+    parts.push(`${label}: ${formatAuditValue(k, v)}`)
   }
   return parts.join(' / ')
 }
