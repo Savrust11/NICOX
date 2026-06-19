@@ -19,7 +19,22 @@ const LABEL = {
   catCount: { '1-3': '1〜3', '4-10': '4〜10', '10+': '10以上', unknown: '不明' },
   earCut: { all: '全てあり', some: '一部あり', none: 'なし', unknown: '不明' },
   kittenStatus: { present: 'いる', absent: 'いない', unknown: '不明' },
+  problem: {
+    waste_damage: '糞尿被害',
+    noise_damage: '鳴き声被害',
+    cats_increasing: '猫が増えている',
+    hoarding_site: '多頭飼育現場がある',
+    feeding_issue: '餌やりトラブル',
+  },
+  request: {
+    reduce_damage: '被害を減らしたい',
+    reduce_cats: '猫を減らしたい',
+    want_surgery: '手術をしたい',
+    consult: '相談したい',
+    volunteer: '活動に協力したい',
+  },
 }
+const trList = (map, arr) => (arr || []).map((v) => tr(map, v)).join(', ') || '-'
 const fmtCoord = (lat, lng) => {
   if (lat == null || lng == null) return '-'
   const ns = lat >= 0 ? 'N' : 'S'
@@ -211,7 +226,7 @@ function DashboardSection() {
                   </div>
                   <div className="admin-row-meta">
                     <span>{new Date(r.reported_at).toLocaleString('ja-JP')}</span>
-                    {r.problem_types?.length > 0 && <span>問題: {r.problem_types.join('、')}</span>}
+                    {r.problem_types?.length > 0 && <span>問題: {r.problem_types.map((v) => tr(LABEL.problem, v)).join('、')}</span>}
                     <span>{latStr}, {lngStr}</span>
                   </div>
                 </div>
@@ -664,8 +679,8 @@ function ReportDetailModal({ id, onClose, onChanged }) {
             <DetailKV label="耳カット"   value={data.report.ear_cut_status ? tr(LABEL.earCut, data.report.ear_cut_status) : '-'} />
             <DetailKV label="子猫"       value={data.report.kitten_status ? tr(LABEL.kittenStatus, data.report.kitten_status) : '-'} />
             <DetailKV label="行動"       value={data.report.behavior || '-'} />
-            <DetailKV label="問題"       value={(data.report.problem_types || []).join(', ') || '-'} />
-            <DetailKV label="要望"       value={(data.report.requests || []).join(', ') || '-'} />
+            <DetailKV label="問題"       value={trList(LABEL.problem, data.report.problem_types)} />
+            <DetailKV label="要望"       value={trList(LABEL.request, data.report.requests)} />
 
             {data.media.length > 0 && (
               <div className="kv">
