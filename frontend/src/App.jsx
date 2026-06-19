@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
-import { Cat, LogIn, LogOut, Map as MapIcon, PencilLine, Shield, CheckCircle } from 'lucide-react'
+import { useState } from 'react'
+import { Cat, LogIn, LogOut, Map as MapIcon, PencilLine, Shield } from 'lucide-react'
+import { Toaster, toast } from 'sonner'
 import { useAuth } from './lib/AuthContext'
 import ReportForm from './components/ReportForm'
 import MapView from './components/MapView'
@@ -13,19 +14,12 @@ export default function App() {
   const [tab, setTab] = useState('home')
   const [showAuth, setShowAuth] = useState(false)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
-  const [toast, setToast] = useState('')
-
-  useEffect(() => {
-    if (!toast) return
-    const t = setTimeout(() => setToast(''), 2800)
-    return () => clearTimeout(t)
-  }, [toast])
 
   async function handleConfirmLogout() {
     setShowLogoutConfirm(false)
     await signOut()
     setTab('home')
-    setToast('ログアウトしました')
+    toast.success('ログアウトしました')
   }
 
   const role = user?.role
@@ -122,12 +116,7 @@ export default function App() {
         </div>
       )}
 
-      {toast && (
-        <div key={toast} className="toast" role="status">
-          <CheckCircle strokeWidth={2.4} />
-          <span>{toast}</span>
-        </div>
-      )}
+      <Toaster position="top-right" richColors closeButton />
     </div>
   )
 }
