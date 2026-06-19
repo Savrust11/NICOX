@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Cat, LogIn, LogOut, Map as MapIcon, PencilLine, Shield } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Cat, LogIn, LogOut, Map as MapIcon, PencilLine, Shield, CheckCircle } from 'lucide-react'
 import { useAuth } from './lib/AuthContext'
 import ReportForm from './components/ReportForm'
 import MapView from './components/MapView'
@@ -12,6 +12,21 @@ export default function App() {
   const { user, session, loading, signOut } = useAuth()
   const [tab, setTab] = useState('home')
   const [showAuth, setShowAuth] = useState(false)
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+  const [toast, setToast] = useState('')
+
+  useEffect(() => {
+    if (!toast) return
+    const t = setTimeout(() => setToast(''), 2800)
+    return () => clearTimeout(t)
+  }, [toast])
+
+  async function handleConfirmLogout() {
+    setShowLogoutConfirm(false)
+    await signOut()
+    setTab('home')
+    setToast('ログアウトしました')
+  }
 
   const role = user?.role
   const isApproved = user?.approval_status === 'approved' || role === 'admin'
@@ -68,7 +83,7 @@ export default function App() {
             </button>
           ))}
           {session ? (
-            <button className="tab tab-account" onClick={signOut} title={user?.name || ''}>
+            <button className="tab tab-account" onClick={() => setShowLogoutConfirm(true)} title={user?.name || ''}>
               <LogOut size={14} strokeWidth={2.2} />
               <span>ログアウト</span>
             </button>
@@ -92,6 +107,27 @@ export default function App() {
       <main className="main">
         {renderTab()}
       </main>
+
+      {showLogoutConfirm && (
+        <div className="logout-backdrop" onClick={() => setShowLogoutConfirm(false)}>
+          <div className="logout-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="logout-icon"><LogOut size={28} strokeWidth={2} /></div>
+            <h3>ログアウトしますか？</h3>
+            <p>再度ご利用の際は、もう一度ログインが必要です。</p>
+            <div className="logout-actions">
+              <button className="logout-cancel" onClick={() => setShowLogoutConfirm(false)}>キャンセル</button>
+              <button className="logout-confirm" onClick={handleConfirmLogout}>ログアウト</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {toast && (
+        <div className="toast" role="status">
+          <CheckCircle size={18} strokeWidth={2.4} />
+          <span>{toast}</span>
+        </div>
+      )}
     </div>
   )
 }
