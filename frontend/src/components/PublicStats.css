@@ -95,17 +95,6 @@
   line-height: 1.7;
   margin-bottom: 18px;
 }
-.ps-signin-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: #1a73e8;
-  color: #fff;
-  padding: 12px 24px;
-  border-radius: 999px;
-  font-size: 15px;
-}
-
 .ps-loading, .ps-error {
   font-size: 13px;
   color: #888;

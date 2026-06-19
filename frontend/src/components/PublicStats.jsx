@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
-import { AlertTriangle, BarChart3, CheckCircle, Eye, LogIn, MapPin, Stethoscope } from 'lucide-react'
+import { AlertTriangle, BarChart3, CheckCircle, Eye, MapPin, Stethoscope } from 'lucide-react'
 import { api } from '../lib/api'
 import './PublicStats.css'
 
-export default function PublicStats({ onSignInClick }) {
+export default function PublicStats() {
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState('')
@@ -45,9 +45,6 @@ export default function PublicStats({ onSignInClick }) {
           管理者の承認を経てログインしていただく必要があります。
           動物愛護の観点から、位置情報を含む詳細データの取り扱いには慎重を期しています。
         </p>
-        <button className="ps-signin-btn" onClick={onSignInClick}>
-          <LogIn size={18} /> ログイン / 新規登録
-        </button>
       </div>
     </div>
   )

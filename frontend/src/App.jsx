@@ -48,7 +48,7 @@ export default function App() {
     if (activeTab === 'report') return <ReportForm onSuccess={() => setTab(isApproved ? 'map' : 'home')} />
     if (activeTab === 'map' && isApproved) return <MapView />
     if (activeTab === 'admin' && isAdmin) return <AdminPanel />
-    return <PublicStats onSignInClick={() => setShowAuth(true)} />
+    return <PublicStats />
   }
 
   return (
