@@ -116,7 +116,7 @@ export default function App() {
         </div>
       )}
 
-      <Toaster position="top-right" richColors closeButton />
+      <Toaster position="top-right" richColors duration={2500} />
     </div>
   )
 }
