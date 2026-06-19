@@ -123,8 +123,8 @@ export default function App() {
       )}
 
       {toast && (
-        <div className="toast" role="status">
-          <CheckCircle size={18} strokeWidth={2.4} />
+        <div key={toast} className="toast" role="status">
+          <CheckCircle strokeWidth={2.4} />
           <span>{toast}</span>
         </div>
       )}
