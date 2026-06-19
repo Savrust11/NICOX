@@ -785,6 +785,7 @@ function AreasSection() {
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState('')
   const [creating, setCreating] = useState(false)
+  const [openedId, setOpenedId] = useState(null)
   const [form, setForm] = useState({ name: '', area_type: 'district', description: '', geojsonObj: null })
 
   const load = useCallback(async () => {
@@ -856,28 +857,65 @@ function AreasSection() {
       {!loading && areas.length === 0 && <p className="admin-empty">エリアが登録されていません。</p>}
 
       <ul className="admin-list">
-        {areas.map((a) => (
-          <li key={a.id} className="admin-row">
-            <div className="admin-row-info">
-              <div className="admin-row-name">
-                {a.name} <span className="pill">{tr(LABEL.areaType, a.area_type)}</span>
+        {areas.map((a) => {
+          const open = openedId === a.id
+          const hasCenter = a.lat != null && a.lng != null
+          const latStr = hasCenter ? `${Math.abs(a.lat).toFixed(4)}°${a.lat >= 0 ? 'N' : 'S'}` : ''
+          const lngStr = hasCenter ? `${Math.abs(a.lng).toFixed(4)}°${a.lng >= 0 ? 'E' : 'W'}` : ''
+          return (
+            <li key={a.id} className="admin-row">
+              <div className="admin-row-info">
+                <div className="admin-row-name">
+                  {a.name} <span className="pill">{tr(LABEL.areaType, a.area_type)}</span>
+                </div>
+                <div className="admin-row-meta">
+                  {a.description && <span>{a.description}</span>}
+                  {a.responsible_name && <span>担当: {a.responsible_name}</span>}
+                  {hasCenter && (
+                    <button
+                      type="button"
+                      className="area-center-link"
+                      onClick={() => setOpenedId(open ? null : a.id)}
+                    >
+                      中心座標: {latStr}, {lngStr}
+                    </button>
+                  )}
+                </div>
+                {open && hasCenter && <AreaPreviewMap lat={a.lat} lng={a.lng} name={a.name} />}
               </div>
-              <div className="admin-row-meta">
-                {a.description && <span>{a.description}</span>}
-                {a.responsible_name && <span>担当: {a.responsible_name}</span>}
-                <span>中心: {a.lat?.toFixed(4)}, {a.lng?.toFixed(4)}</span>
+              <div className="admin-row-actions">
+                <button className="delete-btn" onClick={() => del(a.id)}>
+                  <Trash2 size={14} />
+                </button>
               </div>
-            </div>
-            <div className="admin-row-actions">
-              <button className="delete-btn" onClick={() => del(a.id)}>
-                <Trash2 size={14} />
-              </button>
-            </div>
-          </li>
-        ))}
+            </li>
+          )
+        })}
       </ul>
     </div>
   )
+}
+
+function AreaPreviewMap({ lat, lng, name }) {
+  const containerRef = useRef(null)
+  useEffect(() => {
+    if (!containerRef.current) return
+    const map = L.map(containerRef.current, { scrollWheelZoom: false }).setView([lat, lng], 13)
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; OSM &copy; CARTO',
+    }).addTo(map)
+    L.marker([lat, lng], {
+      icon: L.divIcon({
+        className: 'area-center-marker',
+        html: '<div class="area-center-pin"></div>',
+        iconSize: [18, 18],
+        iconAnchor: [9, 9],
+      }),
+    }).addTo(map).bindTooltip(name, { permanent: false, direction: 'top', offset: [0, -8] })
+    setTimeout(() => map.invalidateSize(), 50)
+    return () => map.remove()
+  }, [lat, lng, name])
+  return <div ref={containerRef} className="area-preview-map" />
 }
 
 function AreaPolygonPicker({ value, onChange }) {
