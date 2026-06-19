@@ -39,28 +39,6 @@ export default function PublicStats() {
         <p>地域の野良猫問題に取り組むためのプラットフォームです。</p>
       </div>
 
-      {areas.length > 0 && (
-        <div className="ps-section">
-          <h2><MapPin size={18} /> 市町村を選択</h2>
-          <div className="ps-area-selector">
-            <button
-              className={`ps-area-chip ${!selectedAreaId ? 'active' : ''}`}
-              onClick={() => setSelectedAreaId('')}
-            >全体</button>
-            {areas.map((a) => (
-              <button
-                key={a.id}
-                className={`ps-area-chip ${String(selectedAreaId) === String(a.id) ? 'active' : ''}`}
-                onClick={() => setSelectedAreaId(a.id)}
-              >
-                {a.name}
-                <span className="ps-area-count">{a.total_reports}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
       <div className="ps-section">
         <h2>
           <BarChart3 size={18} /> 現在の活動状況
