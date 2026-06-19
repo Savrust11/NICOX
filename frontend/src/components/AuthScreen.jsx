@@ -3,6 +3,22 @@ import { Cat, LogIn, UserPlus } from 'lucide-react'
 import { useAuth } from '../lib/AuthContext'
 import './AuthScreen.css'
 
+function translateAuthError(msg) {
+  if (!msg) return '処理に失敗しました'
+  const s = String(msg)
+  const rate = s.match(/For security purposes, you can only request this after (\d+) seconds?/i)
+  if (rate) return `セキュリティ保護のため、${rate[1]}秒後に再度お試しください。`
+  const overEmail = s.match(/email rate limit exceeded/i)
+  if (overEmail) return 'メール送信回数の上限を超えました。しばらく時間をおいてからお試しください。'
+  if (/Invalid login credentials/i.test(s)) return 'メールアドレスまたはパスワードが正しくありません。'
+  if (/Email not confirmed/i.test(s)) return 'メールアドレスが未確認です。受信メールのリンクから承認を完了してください。'
+  if (/User already registered/i.test(s)) return 'このメールアドレスは既に登録されています。'
+  if (/Password should be at least/i.test(s)) return 'パスワードが短すぎます。'
+  if (/Unable to validate email address/i.test(s)) return 'メールアドレスの形式が正しくありません。'
+  if (/Signup (is )?disabled/i.test(s)) return '新規登録は現在無効化されています。'
+  return s
+}
+
 export default function AuthScreen({ onClose }) {
   const { signIn, signUp } = useAuth()
   const [mode, setMode] = useState('login') // 'login' | 'register'
@@ -28,7 +44,7 @@ export default function AuthScreen({ onClose }) {
         setInfo('登録メールを送信しました。メール内のリンクをクリックして承認を完了してください。')
       }
     } catch (err) {
-      setError(err.message || '処理に失敗しました')
+      setError(translateAuthError(err.message))
     } finally {
       setBusy(false)
     }
