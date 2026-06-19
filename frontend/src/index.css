@@ -39,6 +39,15 @@ input[type="text"], input[type="number"], input[type="email"], input[type="passw
 }
 input:focus, textarea:focus, select:focus { border-color: #4a90d9; box-shadow: 0 0 0 2px rgba(74,144,217,0.15); }
 
+input[type=text] {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  min-height: 36px;
+  padding: 8px 24px;
+  font-size: 13px;
+}
+
 label { font-size: 14px; font-weight: 600; color: #444; display: block; margin-bottom: 6px; }
 
 /* User current-location marker (Google Maps-style blue dot with pulsing ring) */
