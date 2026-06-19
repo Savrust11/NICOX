@@ -25,6 +25,12 @@ const LABEL = {
     cats_increasing: '猫が増えている',
     hoarding_site: '多頭飼育現場がある',
     feeding_issue: '餌やりトラブル',
+    // legacy short codes
+    waste: '糞尿',
+    kittens: '子猫',
+    noise: '鳴き声',
+    unfixed: '未手術猫',
+    feeding: '餌やり問題',
   },
   request: {
     reduce_damage: '被害を減らしたい',
@@ -32,6 +38,8 @@ const LABEL = {
     want_surgery: '手術をしたい',
     consult: '相談したい',
     volunteer: '活動に協力したい',
+    // legacy
+    immediate: 'すぐ対応してほしい',
   },
 }
 const trList = (map, arr) => (arr || []).map((v) => tr(map, v)).join(', ') || '-'
