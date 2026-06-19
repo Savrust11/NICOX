@@ -4,17 +4,28 @@ const { requireAuth, requireApproved, requireRole } = require('../auth');
 
 const router = express.Router();
 
-// GET /api/hotspots — list active hotspots with summary (approved members and admins)
+// GET /api/hotspots — list active hotspots (approved members and admins).
+// Non-admin members are restricted to hotspots located inside their assigned areas.
 router.get('/', requireAuth, requireApproved, async (req, res) => {
   const { status } = req.query;
   const params = [];
-  let whereClause;
+  const conds = [];
   if (status) {
     params.push(status);
-    whereClause = `WHERE h.status = $1`;
+    conds.push(`h.status = $${params.length}`);
   } else {
-    whereClause = `WHERE h.status NOT IN ('resolved', 'discarded')`;
+    conds.push(`h.status NOT IN ('resolved', 'discarded')`);
   }
+  if (req.user.role !== 'admin') {
+    params.push(req.user.id);
+    conds.push(`EXISTS (
+      SELECT 1 FROM user_areas ua
+      JOIN areas a ON a.id = ua.area_id
+      WHERE ua.user_id = $${params.length}
+        AND ST_Contains(a.geometry, h.centroid::geometry)
+    )`);
+  }
+  const whereClause = `WHERE ${conds.join(' AND ')}`;
 
   try {
     const result = await db.query(
@@ -47,9 +58,26 @@ router.get('/', requireAuth, requireApproved, async (req, res) => {
   }
 });
 
-// GET /api/hotspots/:id — single hotspot with its reports
+// GET /api/hotspots/:id — single hotspot with its reports.
+// Members can only fetch hotspots inside their assigned areas; admins unrestricted.
 router.get('/:id', requireAuth, requireApproved, async (req, res) => {
   const { id } = req.params;
+
+  if (req.user.role !== 'admin') {
+    const allowed = await db.query(
+      `SELECT 1 FROM hotspots h
+         WHERE h.id = $1
+           AND EXISTS (
+             SELECT 1 FROM user_areas ua
+             JOIN areas a ON a.id = ua.area_id
+             WHERE ua.user_id = $2
+               AND ST_Contains(a.geometry, h.centroid::geometry)
+           )
+         LIMIT 1`,
+      [id, req.user.id]
+    );
+    if (!allowed.rowCount) return res.status(404).json({ error: 'Hotspot not found' });
+  }
 
   try {
     const [hotspot, reports] = await Promise.all([

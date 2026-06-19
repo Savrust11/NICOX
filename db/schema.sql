@@ -165,6 +165,20 @@ CREATE TABLE IF NOT EXISTS cats (
 CREATE INDEX IF NOT EXISTS idx_cats_hotspot_id ON cats(hotspot_id);
 
 -- ============================================================================
+-- User ↔ Area assignments (many-to-many for member area access)
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS user_areas (
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  area_id INTEGER NOT NULL REFERENCES areas(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY(user_id, area_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_areas_user ON user_areas(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_areas_area ON user_areas(area_id);
+
+-- ============================================================================
 -- LAYER 4: Admin Audit Log
 -- ============================================================================
 

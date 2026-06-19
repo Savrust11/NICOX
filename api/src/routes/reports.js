@@ -138,11 +138,31 @@ router.post('/', async (req, res) => {
   }
 });
 
-// GET /api/reports — approved members and admins only
+// GET /api/reports — approved members and admins only.
+// Non-admin members are restricted to reports located inside their assigned areas.
 router.get('/', requireAuth, requireApproved, async (req, res) => {
   const { status, limit = 50, offset = 0 } = req.query;
 
-  let query = `
+  const params = [];
+  const where = [];
+
+  if (status) {
+    params.push(status);
+    where.push(`r.status = $${params.length}`);
+  }
+
+  if (req.user.role !== 'admin') {
+    params.push(req.user.id);
+    where.push(`EXISTS (
+      SELECT 1 FROM user_areas ua
+      JOIN areas a ON a.id = ua.area_id
+      WHERE ua.user_id = $${params.length}
+        AND ST_Contains(a.geometry, r.location::geometry)
+    )`);
+  }
+
+  const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
+  const query = `
     SELECT
       r.id,
       ST_X(r.location::geometry) AS longitude,
@@ -170,13 +190,10 @@ router.get('/', requireAuth, requireApproved, async (req, res) => {
       ) AS media_urls
     FROM reports r
     LEFT JOIN sighting_details sd ON r.id = sd.report_id
+    ${whereSql}
+    ORDER BY r.reported_at DESC
+    LIMIT $${params.length + 1} OFFSET $${params.length + 2}
   `;
-  const params = [];
-  if (status) {
-    params.push(status);
-    query += ` WHERE r.status = $${params.length}`;
-  }
-  query += ` ORDER BY r.reported_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
   params.push(limit, offset);
 
   try {

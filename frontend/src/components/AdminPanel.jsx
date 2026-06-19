@@ -3,6 +3,7 @@ import {
   BarChart3, Users, FileText, MapPin, Map as MapIcon, ClipboardList, Download,
   Check, X, RefreshCw, Trash2, Search, Eye,
 } from 'lucide-react'
+// NOTE: area assignment for members is managed via the AreaAssignModal below
 import { api } from '../lib/api'
 import './AdminPanel.css'
 
@@ -169,6 +170,7 @@ function UsersSection() {
   const [role, setRole] = useState('')
   const [status, setStatus] = useState('')
   const [busy, setBusy] = useState(null)
+  const [areaModalUser, setAreaModalUser] = useState(null)
 
   const load = useCallback(async () => {
     setLoading(true); setErr('')
@@ -248,6 +250,7 @@ function UsersSection() {
                 <span>{u.email}</span>
                 {u.organization && <span>所属: {u.organization}</span>}
                 <span>通報: {u.report_count}件</span>
+                <span>管轄エリア: {u.area_count ?? 0}</span>
                 <span>登録: {new Date(u.created_at).toLocaleDateString('ja-JP')}</span>
               </div>
             </div>
@@ -277,6 +280,10 @@ function UsersSection() {
                 onClick={() => updateUser(u.id, { is_active: !u.is_active })}>
                 {u.is_active ? '停止' : '再開'}
               </button>
+              <button className="toggle-btn" disabled={busy === u.id}
+                onClick={() => setAreaModalUser(u)}>
+                <MapIcon size={14} /> エリア
+              </button>
               <button className="delete-btn" disabled={busy === u.id} onClick={() => deleteUser(u.id)}>
                 <Trash2 size={14} />
               </button>
@@ -284,6 +291,91 @@ function UsersSection() {
           </li>
         ))}
       </ul>
+
+      {areaModalUser && (
+        <AreaAssignModal
+          user={areaModalUser}
+          onClose={() => setAreaModalUser(null)}
+          onSaved={() => { setAreaModalUser(null); load() }}
+        />
+      )}
+    </div>
+  )
+}
+
+function AreaAssignModal({ user, onClose, onSaved }) {
+  const [allAreas, setAllAreas] = useState([])
+  const [selected, setSelected] = useState(new Set())
+  const [loading, setLoading] = useState(true)
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState('')
+
+  useEffect(() => {
+    let alive = true
+    Promise.all([api.adminListAreas(), api.adminGetUserAreas(user.id)])
+      .then(([all, mine]) => {
+        if (!alive) return
+        setAllAreas(all.areas || [])
+        setSelected(new Set((mine.areas || []).map((a) => a.id)))
+      })
+      .catch((e) => alive && setErr(e.message))
+      .finally(() => alive && setLoading(false))
+    return () => { alive = false }
+  }, [user.id])
+
+  function toggle(id) {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id); else next.add(id)
+      return next
+    })
+  }
+
+  async function save() {
+    setBusy(true)
+    try {
+      await api.adminSetUserAreas(user.id, Array.from(selected))
+      onSaved()
+    } catch (e) { alert(e.message) }
+    finally { setBusy(false) }
+  }
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3>{user.name} の管轄エリア</h3>
+          <button onClick={onClose}><X size={18} /></button>
+        </div>
+        <div className="modal-body">
+          {loading && <p className="admin-empty">読み込み中...</p>}
+          {err && <p className="admin-error">{err}</p>}
+          {!loading && allAreas.length === 0 && (
+            <p className="admin-empty">先に「エリア」セクションでエリアを登録してください。</p>
+          )}
+          {!loading && allAreas.length > 0 && (
+            <ul className="area-checklist">
+              {allAreas.map((a) => (
+                <li key={a.id}>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={selected.has(a.id)}
+                      onChange={() => toggle(a.id)}
+                    />
+                    <span className="area-checklist-name">{a.name}</span>
+                    <span className="pill">{a.area_type}</span>
+                  </label>
+                </li>
+              ))}
+            </ul>
+          )}
+          <div className="modal-actions">
+            <button onClick={onClose}>キャンセル</button>
+            <button className="approve-btn" disabled={busy || loading} onClick={save}>保存</button>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

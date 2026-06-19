@@ -42,7 +42,10 @@ export const api = {
 
   getHotspot: (id) => request(`/api/hotspots/${id}`),
 
-  getPublicStats: () => request('/api/stats/public'),
+  getPublicStats: (areaId) =>
+    request(`/api/stats/public${areaId ? `?area_id=${areaId}` : ''}`),
+
+  getPublicAreas: () => request('/api/stats/public/areas'),
 
   getPendingApprovals: () => request('/api/auth/pending'),
 
@@ -67,6 +70,13 @@ export const api = {
       body: JSON.stringify(patch),
     }),
   adminDeleteUser: (id) => request(`/api/admin/users/${id}`, { method: 'DELETE' }),
+  adminGetUserAreas: (id) => request(`/api/admin/users/${id}/areas`),
+  adminSetUserAreas: (id, areaIds) =>
+    request(`/api/admin/users/${id}/areas`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ area_ids: areaIds }),
+    }),
 
   adminListReports: (params = {}) => {
     const qs = new URLSearchParams(params).toString()

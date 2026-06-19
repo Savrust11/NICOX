@@ -105,7 +105,8 @@ router.get('/users', async (req, res) => {
       `SELECT u.id, u.name, u.email, u.organization, u.phone, u.role, u.approval_status,
               u.is_active, u.created_at, u.approved_at,
               (SELECT COUNT(*)::int FROM reports r WHERE r.reporter_id = u.id) AS report_count,
-              (SELECT MAX(r.reported_at) FROM reports r WHERE r.reporter_id = u.id) AS last_report_at
+              (SELECT MAX(r.reported_at) FROM reports r WHERE r.reporter_id = u.id) AS last_report_at,
+              (SELECT COUNT(*)::int FROM user_areas ua WHERE ua.user_id = u.id) AS area_count
        FROM users u
        ${whereSql}
        ORDER BY u.created_at DESC
@@ -147,6 +148,51 @@ router.patch('/users/:id', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to update user' });
+  }
+});
+
+// GET /api/admin/users/:id/areas — list area ids assigned to a member
+router.get('/users/:id/areas', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const r = await db.query(
+      `SELECT a.id, a.name, a.area_type
+       FROM user_areas ua JOIN areas a ON a.id = ua.area_id
+       WHERE ua.user_id = $1 ORDER BY a.name`,
+      [id]
+    );
+    res.json({ areas: r.rows });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to load user areas' });
+  }
+});
+
+// PUT /api/admin/users/:id/areas — replace the user's area assignments
+router.put('/users/:id/areas', async (req, res) => {
+  const { id } = req.params;
+  const { area_ids } = req.body;
+  if (!Array.isArray(area_ids)) return res.status(400).json({ error: 'area_ids array required' });
+  const client = await db.getClient();
+  try {
+    await client.query('BEGIN');
+    await client.query(`DELETE FROM user_areas WHERE user_id = $1`, [id]);
+    if (area_ids.length) {
+      const values = area_ids.map((_, i) => `($1, $${i + 2})`).join(', ');
+      await client.query(
+        `INSERT INTO user_areas (user_id, area_id) VALUES ${values} ON CONFLICT DO NOTHING`,
+        [id, ...area_ids]
+      );
+    }
+    await client.query('COMMIT');
+    await logAction(req.user, 'user.areas_update', 'user', id, { area_ids });
+    res.json({ ok: true, area_ids });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error(err);
+    res.status(500).json({ error: 'Failed to update user areas' });
+  } finally {
+    client.release();
   }
 });
 
