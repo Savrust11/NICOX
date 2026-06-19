@@ -1,11 +1,15 @@
-const { createClient } = require('@supabase/supabase-js');
 const db = require('./db');
 
-const supabaseAdmin = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY,
-  { auth: { autoRefreshToken: false, persistSession: false } }
-);
+async function verifyJwt(token) {
+  const res = await fetch(`${process.env.SUPABASE_URL}/auth/v1/user`, {
+    headers: {
+      apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!res.ok) return null;
+  return res.json();
+}
 
 // Verify the Bearer JWT, load the matching users row, attach to req.user.
 // If no token: req.user = null (caller decides what to do).
@@ -16,9 +20,8 @@ async function loadUser(req, _res, next) {
   if (!m) return next();
 
   try {
-    const { data, error } = await supabaseAdmin.auth.getUser(m[1]);
-    if (error || !data?.user) return next();
-    const authUser = data.user;
+    const authUser = await verifyJwt(m[1]);
+    if (!authUser?.id) return next();
 
     // Upsert / fetch the users row tied to this auth account
     let row = (
