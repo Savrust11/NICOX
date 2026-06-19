@@ -751,7 +751,7 @@ function HotspotsSection() {
             <li key={h.id} className="admin-row">
               <div className="admin-row-info">
                 <div className="admin-row-name">
-                  HS #{h.id}
+                  {h.id}
                   <span className={`pill pill-${h.status}`}>{tr(LABEL.hotspotStatus, h.status)}</span>
                   {h.has_kitten && <span className="pill">子猫</span>}
                   {h.has_ear_cut_visible && <span className="pill">耳カット</span>}
