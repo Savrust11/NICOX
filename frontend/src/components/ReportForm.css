@@ -116,8 +116,9 @@
 }
 
 .photo-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 8px;
   flex: 1;
   min-width: 0;
@@ -125,8 +126,9 @@
 
 .photo-square-img,
 .photo-square-add {
-  width: 100%;
-  aspect-ratio: 1 / 1;
+  width: 60px;
+  height: 60px;
+  flex: 0 0 60px;
   border-radius: 8px;
   overflow: hidden;
   position: relative;
@@ -160,13 +162,6 @@
 .photo-square-add:hover {
   border-color: #1a73e8;
   color: #1a73e8;
-}
-
-/* Mobile: bigger photo thumbnails */
-@media (max-width: 480px) {
-  .photo-grid {
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  }
 }
 
 /* Modern toggle chip (replaces plain checkbox) */
