@@ -7,6 +7,16 @@ import {
 import { api } from '../lib/api'
 import './AdminPanel.css'
 
+// ---- Japanese display labels (DB values stay English) ----
+const LABEL = {
+  role: { admin: '管理者', member: '活動者', citizen: '市民' },
+  approval: { approved: '承認済み', pending_approval: '承認待ち', rejected: '却下' },
+  reportStatus: { pending: '未対応', processed: '対応済み', discarded: '破棄' },
+  hotspotStatus: { active: '活動中', monitoring: '監視中', high_priority: '高優先', resolved: '解決済み' },
+  areaType: { district: '地区', ward: '区', city: '市', custom: 'カスタム' },
+}
+const tr = (map, v) => map[v] ?? v
+
 const SECTIONS = [
   { id: 'dashboard', label: 'ダッシュボード', icon: BarChart3 },
   { id: 'users',     label: 'ユーザー',       icon: Users },
@@ -99,7 +109,7 @@ function DashboardSection() {
           <thead><tr><th>ステータス</th><th>件数</th></tr></thead>
           <tbody>
             {data.reports_by_status.map((r) => (
-              <tr key={r.status}><td>{r.status}</td><td>{r.count}</td></tr>
+              <tr key={r.status}><td>{tr(LABEL.reportStatus, r.status)}</td><td>{r.count}</td></tr>
             ))}
           </tbody>
         </table>
@@ -126,7 +136,7 @@ function DashboardSection() {
                 <div className="admin-row-name">#{r.id} — {r.reporter_name}</div>
                 <div className="admin-row-meta">
                   <span>{new Date(r.reported_at).toLocaleString('ja-JP')}</span>
-                  <span>状態: {r.status}</span>
+                  <span>状態: {tr(LABEL.reportStatus, r.status)}</span>
                   <span>{r.latitude?.toFixed(4)}, {r.longitude?.toFixed(4)}</span>
                 </div>
               </div>
@@ -222,15 +232,15 @@ function UsersSection() {
         </div>
         <select value={role} onChange={(e) => setRole(e.target.value)}>
           <option value="">全ロール</option>
-          <option value="admin">admin</option>
-          <option value="member">member</option>
-          <option value="citizen">citizen</option>
+          <option value="admin">{LABEL.role.admin}</option>
+          <option value="member">{LABEL.role.member}</option>
+          <option value="citizen">{LABEL.role.citizen}</option>
         </select>
         <select value={status} onChange={(e) => setStatus(e.target.value)}>
           <option value="">全ステータス</option>
-          <option value="approved">approved</option>
-          <option value="pending_approval">pending_approval</option>
-          <option value="rejected">rejected</option>
+          <option value="approved">{LABEL.approval.approved}</option>
+          <option value="pending_approval">{LABEL.approval.pending_approval}</option>
+          <option value="rejected">{LABEL.approval.rejected}</option>
         </select>
       </div>
 
@@ -242,8 +252,8 @@ function UsersSection() {
           <li key={u.id} className="admin-row">
             <div className="admin-row-info">
               <div className="admin-row-name">
-                {u.name} <span className={`pill pill-${u.role}`}>{u.role}</span>
-                <span className={`pill pill-${u.approval_status}`}>{u.approval_status}</span>
+                {u.name} <span className={`pill pill-${u.role}`}>{tr(LABEL.role, u.role)}</span>
+                <span className={`pill pill-${u.approval_status}`}>{tr(LABEL.approval, u.approval_status)}</span>
                 {!u.is_active && <span className="pill pill-suspended">停止中</span>}
               </div>
               <div className="admin-row-meta">
@@ -260,9 +270,9 @@ function UsersSection() {
                 disabled={busy === u.id}
                 onChange={(e) => updateUser(u.id, { role: e.target.value })}
               >
-                <option value="citizen">citizen</option>
-                <option value="member">member</option>
-                <option value="admin">admin</option>
+                <option value="citizen">{LABEL.role.citizen}</option>
+                <option value="member">{LABEL.role.member}</option>
+                <option value="admin">{LABEL.role.admin}</option>
               </select>
               {u.approval_status !== 'approved' && (
                 <button className="approve-btn" disabled={busy === u.id}
@@ -364,7 +374,7 @@ function AreaAssignModal({ user, onClose, onSaved }) {
                       onChange={() => toggle(a.id)}
                     />
                     <span className="area-checklist-name">{a.name}</span>
-                    <span className="pill">{a.area_type}</span>
+                    <span className="pill">{tr(LABEL.areaType, a.area_type)}</span>
                   </label>
                 </li>
               ))}
@@ -459,9 +469,9 @@ function ReportsSection() {
         </div>
         <select value={filters.status} onChange={(e) => setFilters({ ...filters, status: e.target.value })}>
           <option value="">全状態</option>
-          <option value="pending">pending</option>
-          <option value="processed">processed</option>
-          <option value="discarded">discarded</option>
+          <option value="pending">{LABEL.reportStatus.pending}</option>
+          <option value="processed">{LABEL.reportStatus.processed}</option>
+          <option value="discarded">{LABEL.reportStatus.discarded}</option>
         </select>
         <select value={filters.has_photo} onChange={(e) => setFilters({ ...filters, has_photo: e.target.value })}>
           <option value="">写真フィルタなし</option>
@@ -495,7 +505,7 @@ function ReportsSection() {
             <div className="admin-row-info">
               <div className="admin-row-name">
                 #{r.id} — {r.reporter_name}
-                <span className={`pill pill-${r.status}`}>{r.status}</span>
+                <span className={`pill pill-${r.status}`}>{tr(LABEL.reportStatus, r.status)}</span>
                 {r.photo_count > 0 && <span className="pill">📷 {r.photo_count}</span>}
               </div>
               <div className="admin-row-meta">
@@ -507,9 +517,9 @@ function ReportsSection() {
             </div>
             <div className="admin-row-actions admin-actions-grid">
               <select value={r.status} disabled={busy} onChange={(e) => updateStatus(r.id, e.target.value)}>
-                <option value="pending">pending</option>
-                <option value="processed">processed</option>
-                <option value="discarded">discarded</option>
+                <option value="pending">{LABEL.reportStatus.pending}</option>
+                <option value="processed">{LABEL.reportStatus.processed}</option>
+                <option value="discarded">{LABEL.reportStatus.discarded}</option>
               </select>
               <button className="toggle-btn" onClick={() => setOpenId(r.id)}>
                 <Eye size={14} />
@@ -563,7 +573,7 @@ function ReportDetailModal({ id, onClose, onChanged }) {
           <div className="modal-body">
             <DetailKV label="通報者"     value={`${data.report.reporter_name || '匿名'} (${data.report.reporter_email || '-'})`} />
             <DetailKV label="通報日時"   value={new Date(data.report.reported_at).toLocaleString('ja-JP')} />
-            <DetailKV label="ステータス" value={data.report.status} />
+            <DetailKV label="ステータス" value={tr(LABEL.reportStatus, data.report.status)} />
             <DetailKV label="座標"       value={`${data.report.latitude?.toFixed(6)}, ${data.report.longitude?.toFixed(6)}`} />
             <DetailKV label="頭数"       value={data.report.cat_count_range || '-'} />
             <DetailKV label="耳カット"   value={data.report.ear_cut_status || '-'} />
@@ -692,7 +702,7 @@ function HotspotsSection() {
               <div className="admin-row-info">
                 <div className="admin-row-name">
                   HS #{h.id}
-                  <span className={`pill pill-${h.status}`}>{h.status}</span>
+                  <span className={`pill pill-${h.status}`}>{tr(LABEL.hotspotStatus, h.status)}</span>
                   {h.has_kitten && <span className="pill">子猫</span>}
                   {h.has_ear_cut_visible && <span className="pill">耳カット</span>}
                 </div>
@@ -774,10 +784,10 @@ function AreasSection() {
           </label>
           <label>種別
             <select value={form.area_type} onChange={(e) => setForm({ ...form, area_type: e.target.value })}>
-              <option value="district">district</option>
-              <option value="ward">ward</option>
-              <option value="city">city</option>
-              <option value="custom">custom</option>
+              <option value="district">{LABEL.areaType.district}</option>
+              <option value="ward">{LABEL.areaType.ward}</option>
+              <option value="city">{LABEL.areaType.city}</option>
+              <option value="custom">{LABEL.areaType.custom}</option>
             </select>
           </label>
           <label>説明
@@ -799,7 +809,7 @@ function AreasSection() {
           <li key={a.id} className="admin-row">
             <div className="admin-row-info">
               <div className="admin-row-name">
-                {a.name} <span className="pill">{a.area_type}</span>
+                {a.name} <span className="pill">{tr(LABEL.areaType, a.area_type)}</span>
               </div>
               <div className="admin-row-meta">
                 {a.description && <span>{a.description}</span>}
@@ -920,9 +930,9 @@ function ExportSection() {
         </label>
         <select value={filters.status} onChange={(e) => setFilters({ ...filters, status: e.target.value })}>
           <option value="">全ステータス</option>
-          <option value="pending">pending</option>
-          <option value="processed">processed</option>
-          <option value="discarded">discarded</option>
+          <option value="pending">{LABEL.reportStatus.pending}</option>
+          <option value="processed">{LABEL.reportStatus.processed}</option>
+          <option value="discarded">{LABEL.reportStatus.discarded}</option>
         </select>
         <button className="approve-btn" disabled={busy} onClick={download}>
           <Download size={14} /> ダウンロード
