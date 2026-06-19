@@ -451,12 +451,12 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 
 .audit-details {
-  margin: 0;
-  font-size: 11px;
-  color: #666;
-  white-space: pre-wrap;
-  word-break: break-all;
-  max-width: 300px;
+  display: inline-block;
+  font-size: 12px;
+  color: #555;
+  line-height: 1.5;
+  max-width: 360px;
+  word-break: break-word;
 }
 
 .admin-empty {

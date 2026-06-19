@@ -17,6 +17,44 @@ const LABEL = {
 }
 const tr = (map, v) => map[v] ?? v
 
+const FIELD_LABEL = {
+  status: 'ステータス',
+  role: '役割',
+  approval_status: '承認状態',
+  is_active: '有効',
+  area_type: '種別',
+  area_ids: 'エリアID',
+  ids: '対象ID',
+  notes: 'メモ',
+  name: '名前',
+  email: 'メール',
+  description: '説明',
+  organization: '所属',
+  phone: '電話',
+}
+const FIELD_VALUE_MAP = {
+  status: LABEL.reportStatus,
+  role: LABEL.role,
+  approval_status: LABEL.approval,
+  area_type: LABEL.areaType,
+}
+function formatAuditDetails(details) {
+  if (!details || typeof details !== 'object') return ''
+  const parts = []
+  for (const [k, v] of Object.entries(details)) {
+    const label = FIELD_LABEL[k] ?? k
+    let display
+    if (v === null || v === undefined) display = '-'
+    else if (typeof v === 'boolean') display = v ? 'はい' : 'いいえ'
+    else if (Array.isArray(v)) display = v.length ? v.join(', ') : '(なし)'
+    else if (typeof v === 'object') display = JSON.stringify(v)
+    else if (FIELD_VALUE_MAP[k]) display = tr(FIELD_VALUE_MAP[k], v)
+    else display = String(v)
+    parts.push(`${label}: ${display}`)
+  }
+  return parts.join(' / ')
+}
+
 const SECTIONS = [
   { id: 'dashboard', label: 'ダッシュボード', icon: BarChart3 },
   { id: 'users',     label: 'ユーザー',       icon: Users },
@@ -881,7 +919,7 @@ function AuditSection() {
               <td>{e.actor_email || `#${e.actor_user_id}`}</td>
               <td>{e.action}</td>
               <td>{e.target_type} {e.target_id && `#${e.target_id}`}</td>
-              <td><pre className="audit-details">{e.details ? JSON.stringify(e.details) : ''}</pre></td>
+              <td><span className="audit-details">{formatAuditDetails(e.details)}</span></td>
             </tr>
           ))}
         </tbody>
