@@ -414,6 +414,10 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   color: #555;
   font-weight: 600;
 }
+.form-card > .approve-btn {
+  width: 100px;
+  align-self: flex-start;
+}
 .form-card input,
 .form-card select,
 .form-card textarea {
