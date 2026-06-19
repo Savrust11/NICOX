@@ -1,8 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   BarChart3, Users, FileText, MapPin, Map as MapIcon, ClipboardList, Download,
   Check, X, RefreshCw, Trash2, Search, Eye,
 } from 'lucide-react'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
 // NOTE: area assignment for members is managed via the AreaAssignModal below
 import { api } from '../lib/api'
 import './AdminPanel.css'
@@ -783,7 +785,7 @@ function AreasSection() {
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState('')
   const [creating, setCreating] = useState(false)
-  const [form, setForm] = useState({ name: '', area_type: 'district', description: '', geojson: '' })
+  const [form, setForm] = useState({ name: '', area_type: 'district', description: '', geojsonObj: null })
 
   const load = useCallback(async () => {
     setLoading(true); setErr('')
@@ -794,18 +796,17 @@ function AreasSection() {
   useEffect(() => { load() }, [load])
 
   async function create() {
-    let geometry_geojson
-    try { geometry_geojson = JSON.parse(form.geojson) }
-    catch { return alert('GeoJSONが不正です') }
+    if (!form.name.trim()) return alert('名前を入力してください')
+    if (!form.geojsonObj) return alert('地図上で3点以上をクリックしてエリアの範囲を指定してください')
     try {
       await api.adminCreateArea({
         name: form.name,
         area_type: form.area_type,
         description: form.description,
-        geometry_geojson,
+        geometry_geojson: form.geojsonObj,
       })
       setCreating(false)
-      setForm({ name: '', area_type: 'district', description: '', geojson: '' })
+      setForm({ name: '', area_type: 'district', description: '', geojsonObj: null })
       await load()
     } catch (e) { alert(e.message) }
   }
@@ -841,9 +842,11 @@ function AreasSection() {
           <label>説明
             <input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
           </label>
-          <label>GeoJSON Polygon
-            <textarea rows={5} placeholder='{"type":"Polygon","coordinates":[[[lon,lat],...]]}'
-              value={form.geojson} onChange={(e) => setForm({ ...form, geojson: e.target.value })} />
+          <label>エリア範囲（地図上を順にクリックして3点以上で囲んでください）
+            <AreaPolygonPicker
+              value={form.geojsonObj}
+              onChange={(g) => setForm({ ...form, geojsonObj: g })}
+            />
           </label>
           <button className="approve-btn" onClick={create}>作成</button>
         </div>
@@ -873,6 +876,86 @@ function AreasSection() {
           </li>
         ))}
       </ul>
+    </div>
+  )
+}
+
+function AreaPolygonPicker({ value, onChange }) {
+  const containerRef = useRef(null)
+  const mapRef = useRef(null)
+  const layerRef = useRef(null)
+  const pointsRef = useRef([])
+  const onChangeRef = useRef(onChange)
+  const [count, setCount] = useState(0)
+
+  useEffect(() => { onChangeRef.current = onChange }, [onChange])
+
+  const rebuild = useCallback(() => {
+    if (!layerRef.current) return
+    layerRef.current.clearLayers()
+    const pts = pointsRef.current
+    pts.forEach((p) => {
+      L.circleMarker(p, { radius: 5, color: '#1a73e8', fillColor: '#1a73e8', fillOpacity: 1, weight: 2 })
+        .addTo(layerRef.current)
+    })
+    if (pts.length >= 2 && pts.length < 3) {
+      L.polyline(pts, { color: '#1a73e8', weight: 3 }).addTo(layerRef.current)
+    }
+    if (pts.length >= 3) {
+      L.polygon(pts, { color: '#1a73e8', fillColor: '#1a73e8', fillOpacity: 0.18, weight: 2 })
+        .addTo(layerRef.current)
+      const ring = pts.map(([lat, lng]) => [lng, lat])
+      ring.push(ring[0])
+      onChangeRef.current({ type: 'Polygon', coordinates: [ring] })
+    } else {
+      onChangeRef.current(null)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (mapRef.current || !containerRef.current) return
+    const map = L.map(containerRef.current).setView([35.6762, 139.6503], 11)
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; OSM &copy; CARTO',
+    }).addTo(map)
+    layerRef.current = L.layerGroup().addTo(map)
+    map.on('click', (e) => {
+      pointsRef.current = [...pointsRef.current, [e.latlng.lat, e.latlng.lng]]
+      setCount(pointsRef.current.length)
+      rebuild()
+    })
+    mapRef.current = map
+    setTimeout(() => map.invalidateSize(), 50)
+    return () => { map.remove(); mapRef.current = null }
+  }, [rebuild])
+
+  useEffect(() => {
+    if (value == null && pointsRef.current.length > 0) {
+      pointsRef.current = []
+      setCount(0)
+      rebuild()
+    }
+  }, [value, rebuild])
+
+  function undo() {
+    pointsRef.current = pointsRef.current.slice(0, -1)
+    setCount(pointsRef.current.length)
+    rebuild()
+  }
+  function clear() {
+    pointsRef.current = []
+    setCount(0)
+    rebuild()
+  }
+
+  return (
+    <div className="area-picker">
+      <div className="area-picker-toolbar">
+        <span className="area-picker-count">{count} 点配置中{count >= 3 ? '（範囲確定）' : count > 0 ? `（あと${Math.max(0, 3 - count)}点）` : ''}</span>
+        <button type="button" className="toggle-btn" onClick={undo} disabled={count === 0}>1点戻す</button>
+        <button type="button" className="toggle-btn" onClick={clear} disabled={count === 0}>クリア</button>
+      </div>
+      <div ref={containerRef} className="area-picker-map" />
     </div>
   )
 }
