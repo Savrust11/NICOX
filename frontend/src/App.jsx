@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Cat, LogIn, LogOut, Map as MapIcon, PencilLine, Shield } from 'lucide-react'
+import { Cat, HelpCircle, LogIn, LogOut, Map as MapIcon, PencilLine, Shield } from 'lucide-react'
 import { Toaster, toast } from 'sonner'
 import { useAuth } from './lib/AuthContext'
 import ReportForm from './components/ReportForm'
@@ -7,6 +7,7 @@ import MapView from './components/MapView'
 import PublicStats from './components/PublicStats'
 import AuthScreen from './components/AuthScreen'
 import AdminPanel from './components/AdminPanel'
+import HelpScreen from './components/HelpScreen'
 import './App.css'
 
 export default function App() {
@@ -49,6 +50,7 @@ export default function App() {
   if (isAdmin) {
     tabs.push({ id: 'admin', label: '管理', icon: <Shield size={14} strokeWidth={2.2} /> })
   }
+  tabs.push({ id: 'help', label: 'ヘルプ', icon: <HelpCircle size={14} strokeWidth={2.2} /> })
 
   // Make sure currently active tab is still valid
   const activeTab = tabs.find((t) => t.id === tab) ? tab : 'home'
@@ -57,6 +59,7 @@ export default function App() {
     if (activeTab === 'report') return <ReportForm onSuccess={() => setTab(isApproved ? 'map' : 'home')} />
     if (activeTab === 'map' && isApproved) return <MapView />
     if (activeTab === 'admin' && isAdmin) return <AdminPanel />
+    if (activeTab === 'help') return <HelpScreen />
     return <PublicStats />
   }
 
