@@ -109,8 +109,7 @@
 }
 .filter-row select,
 .filter-row input[type=date],
-.filter-row input[type=number],
-.filter-row input[type=text] {
+.filter-row input[type=number] {
   padding: 7px 10px;
   border: 1px solid #ddd;
   border-radius: 8px;
