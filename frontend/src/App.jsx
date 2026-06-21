@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Cat, HelpCircle, LogIn, LogOut, Map as MapIcon, PencilLine, Shield } from 'lucide-react'
+import { Cat, HelpCircle, LogIn, LogOut, Map as MapIcon, Menu, PencilLine, Shield, X } from 'lucide-react'
 import { Toaster, toast } from 'sonner'
 import { useAuth } from './lib/AuthContext'
 import ReportForm from './components/ReportForm'
@@ -15,6 +15,7 @@ export default function App() {
   const [tab, setTab] = useState('home')
   const [showAuth, setShowAuth] = useState(false)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
 
   async function handleConfirmLogout() {
     setShowLogoutConfirm(false)
@@ -70,28 +71,41 @@ export default function App() {
           <Cat size={20} strokeWidth={2} color="#e67e22" />
           <span>NICOX 野良猫マップ</span>
         </span>
-        <nav className="tabs">
-          {tabs.map((t) => (
-            <button key={t.id}
-              className={activeTab === t.id ? 'tab active' : 'tab'}
-              onClick={() => setTab(t.id)}>
-              {t.icon}
-              <span>{t.label}</span>
-            </button>
-          ))}
-          {session ? (
-            <button className="tab tab-account" onClick={() => setShowLogoutConfirm(true)} title={user?.name || ''}>
-              <LogOut size={14} strokeWidth={2.2} />
-              <span>ログアウト</span>
-            </button>
-          ) : (
-            <button className="tab tab-signin" onClick={() => setShowAuth(true)}>
-              <LogIn size={14} strokeWidth={2.2} />
-              <span>ログイン</span>
-            </button>
-          )}
-        </nav>
+        <div className="nav-area">
+          <button
+            className="hamburger"
+            onClick={() => setMenuOpen((o) => !o)}
+            aria-label="メニュー"
+            aria-expanded={menuOpen}
+          >
+            {menuOpen ? <X size={22} strokeWidth={2.2} /> : <Menu size={22} strokeWidth={2.2} />}
+          </button>
+
+          <nav className={menuOpen ? 'tabs open' : 'tabs'}>
+            {tabs.map((t) => (
+              <button key={t.id}
+                className={activeTab === t.id ? 'tab active' : 'tab'}
+                onClick={() => { setTab(t.id); setMenuOpen(false) }}>
+                {t.icon}
+                <span>{t.label}</span>
+              </button>
+            ))}
+            {session ? (
+              <button className="tab tab-account" onClick={() => { setShowLogoutConfirm(true); setMenuOpen(false) }} title={user?.name || ''}>
+                <LogOut size={14} strokeWidth={2.2} />
+                <span>ログアウト</span>
+              </button>
+            ) : (
+              <button className="tab tab-signin" onClick={() => { setShowAuth(true); setMenuOpen(false) }}>
+                <LogIn size={14} strokeWidth={2.2} />
+                <span>ログイン</span>
+              </button>
+            )}
+          </nav>
+        </div>
       </header>
+
+      {menuOpen && <div className="nav-overlay" onClick={() => setMenuOpen(false)} />}
 
       {/* Pending-approval banner for approved-not-yet users */}
       {session && user && !isApproved && (
