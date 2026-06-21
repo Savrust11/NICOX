@@ -111,11 +111,13 @@
   }
 }
 
-/* Click-away overlay for the mobile dropdown */
+/* Click-away overlay for the mobile dropdown.
+   Sits above the map (z-index:0 stacking context) but below the header
+   (z-index:10) so the dropdown items inside the header remain clickable. */
 .nav-overlay {
   position: fixed;
   inset: 0;
-  z-index: 20;
+  z-index: 5;
   background: transparent;
 }
 

@@ -1,5 +1,8 @@
 .map-view {
   position: relative;
+  /* Contain the map's high z-index panes/panels in their own stacking context
+     so they stay below the header and its mobile dropdown menu. */
+  z-index: 0;
   overflow: hidden;
   height: calc(100vh - 60px);
   height: calc(100dvh - 60px);

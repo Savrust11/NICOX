@@ -11,6 +11,10 @@
   flex-shrink: 0;
   cursor: crosshair;
   background: #e8e8e8;
+  /* Keep Leaflet's panes/controls in their own stacking context, below the
+     header and its mobile dropdown menu. */
+  position: relative;
+  z-index: 0;
 }
 
 /* Leaflet marker (red pin) */
