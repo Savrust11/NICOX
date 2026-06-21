@@ -244,7 +244,11 @@
   border: 1px solid #ececec;
 }
 
-.admin-row-info { flex: 1; min-width: 0; }
+.admin-row-info {
+  flex: 1;
+  min-width: 0;
+  padding: 4px;
+}
 
 .admin-row-clickable {
   cursor: pointer;
