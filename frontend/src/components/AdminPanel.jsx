@@ -1213,7 +1213,7 @@ function AuditSection() {
       </div>
       {err && <p className="admin-error">{err}</p>}
       {!loading && entries.length === 0 && <p className="admin-empty">ログがありません。</p>}
-      <table className="admin-table">
+      <table className="admin-table audit-table">
         <thead>
           <tr>
             <th>日時</th><th>実行者</th><th>アクション</th><th>対象</th><th>詳細</th>
@@ -1222,11 +1222,11 @@ function AuditSection() {
         <tbody>
           {entries.map((e) => (
             <tr key={e.id}>
-              <td>{new Date(e.created_at).toLocaleString('ja-JP')}</td>
-              <td>{e.actor_email || `#${e.actor_user_id}`}</td>
-              <td>{e.action}</td>
-              <td>{e.target_type} {e.target_id && `#${e.target_id}`}</td>
-              <td><span className="audit-details">{formatAuditDetails(e.details)}</span></td>
+              <td data-label="日時">{new Date(e.created_at).toLocaleString('ja-JP')}</td>
+              <td data-label="実行者">{e.actor_email || `#${e.actor_user_id}`}</td>
+              <td data-label="アクション">{e.action}</td>
+              <td data-label="対象">{e.target_type} {e.target_id && `#${e.target_id}`}</td>
+              <td data-label="詳細"><span className="audit-details">{formatAuditDetails(e.details)}</span></td>
             </tr>
           ))}
         </tbody>

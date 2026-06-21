@@ -230,6 +230,51 @@
   color: #555;
 }
 
+/* ===== Audit log: card layout on mobile ===== */
+@media (max-width: 600px) {
+  .audit-table thead {
+    /* visually hidden but kept for accessibility */
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+  .audit-table,
+  .audit-table tbody,
+  .audit-table tr,
+  .audit-table td {
+    display: block;
+    width: 100%;
+  }
+  .audit-table tr {
+    border: 1px solid #ececec;
+    border-radius: 10px;
+    background: #fafbfc;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+  }
+  .audit-table td {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 5px 0;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .audit-table td:last-child { border-bottom: none; }
+  .audit-table td::before {
+    content: attr(data-label);
+    flex: 0 0 76px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #888;
+  }
+  .audit-table .audit-details {
+    max-width: none;
+    font-size: 13px;
+  }
+}
+
 /* ===== List rows ===== */
 .admin-list {
   list-style: none;
