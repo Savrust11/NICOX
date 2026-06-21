@@ -860,7 +860,7 @@ function HotspotsSection() {
                   <span>推定頭数: {h.cat_count_estimate}</span>
                   <span>{h.area_name || 'エリア外'}</span>
                   <span>最終: {h.last_seen_at ? new Date(h.last_seen_at).toLocaleDateString('ja-JP') : '-'}</span>
-                  <span>{h.latitude?.toFixed(4)}, {h.longitude?.toFixed(4)}</span>
+                  <span>{fmtCoord(h.latitude, h.longitude)}</span>
                 </div>
               </div>
               <div className="admin-row-actions">
