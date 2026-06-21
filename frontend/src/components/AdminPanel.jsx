@@ -808,15 +808,15 @@ function HotspotsSection() {
           </span>
         </div>
         <div className="filter-row">
-          <label>遡及日数
+          <label><span className="filter-label">遡及日数</span>
             <input type="number" min="1" value={cfg.days_back}
               onChange={(e) => setCfg({ ...cfg, days_back: Number(e.target.value) })} />
           </label>
-          <label>クラスタ半径(m)
+          <label><span className="filter-label">クラスタ半径(m)</span>
             <input type="number" min="10" value={cfg.cluster_radius_meters}
               onChange={(e) => setCfg({ ...cfg, cluster_radius_meters: Number(e.target.value) })} />
           </label>
-          <label>最小通報数
+          <label><span className="filter-label">最小通報数</span>
             <input type="number" min="1" value={cfg.min_points}
               onChange={(e) => setCfg({ ...cfg, min_points: Number(e.target.value) })} />
           </label>
