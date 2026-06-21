@@ -4,7 +4,7 @@ import 'leaflet/dist/leaflet.css'
 import { Camera, CheckCircle2, MapPin, X } from 'lucide-react'
 import { api } from '../lib/api'
 import { compressImage, formatBytes } from '../lib/compress'
-import { getInitialView, saveView, tryGeolocate } from '../lib/viewState'
+import { getInitialView, saveView } from '../lib/viewState'
 import './ReportForm.css'
 
 const LOCATE_ICON_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2v4"/><path d="M12 18v4"/><path d="M2 12h4"/><path d="M18 12h4"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>'
@@ -128,6 +128,7 @@ export default function ReportForm({ onSuccess }) {
   const marker = useRef(null)
   const userMarker = useRef(null)
   const accuracyCircle = useRef(null)
+  const userRequestedLocate = useRef(false)
 
   const [location, setLocation] = useState(null)
   const [fields, setFields] = useState(INITIAL_FIELDS)
@@ -141,15 +142,7 @@ export default function ReportForm({ onSuccess }) {
     map.current = L.map(mapContainer.current).setView(initial.center, initial.zoom)
     L.tileLayer(TILE_URL, { attribution: TILE_ATTR, maxZoom: 19 }).addTo(map.current)
 
-    // If no saved position, try GPS once
-    if (!localStorage.getItem('nicox:mapView')) {
-      tryGeolocate().then((view) => {
-        if (view && map.current) {
-          map.current.setView(view.center, view.zoom)
-          saveView(view.center, view.zoom)
-        }
-      })
-    }
+    const hasSavedView = !!localStorage.getItem('nicox:mapView')
 
     // Persist position on user-driven move/zoom
     const persist = () => {
@@ -166,6 +159,7 @@ export default function ReportForm({ onSuccess }) {
       L.DomEvent.disableClickPropagation(div)
       div.onclick = (e) => {
         e.preventDefault()
+        userRequestedLocate.current = true
         map.current.locate({ setView: true, maxZoom: 16, enableHighAccuracy: true })
       }
       return div
@@ -207,8 +201,17 @@ export default function ReportForm({ onSuccess }) {
     })
 
     map.current.on('locationerror', (e) => {
-      alert('現在地を取得できませんでした: ' + e.message)
+      // Only alert on an explicit button press; stay silent for the automatic
+      // locate on open (e.g. permission not yet granted / unavailable).
+      if (userRequestedLocate.current) {
+        userRequestedLocate.current = false
+        alert('現在地を取得できませんでした: ' + e.message)
+      }
     })
+
+    // Show the current-location marker automatically on open (no button press).
+    // Re-center only on the first visit so a returning user keeps their last view.
+    map.current.locate({ setView: !hasSavedView, maxZoom: 16, enableHighAccuracy: true })
 
     setTimeout(() => map.current?.invalidateSize(), 100)
 
