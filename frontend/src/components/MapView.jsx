@@ -3,7 +3,7 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { AlertTriangle, Baby, CircleAlert, CircleCheck, RefreshCw, X } from 'lucide-react'
 import { api } from '../lib/api'
-import { getInitialView, saveView, tryGeolocate } from '../lib/viewState'
+import { getInitialView, saveView } from '../lib/viewState'
 import './MapView.css'
 
 const LOCATE_ICON_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2v4"/><path d="M12 18v4"/><path d="M2 12h4"/><path d="M18 12h4"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>'
@@ -98,6 +98,7 @@ export default function MapView() {
   const layersRef = useRef([])
   const userMarker = useRef(null)
   const accuracyCircle = useRef(null)
+  const userRequestedLocate = useRef(false)
 
   const [selected, setSelected] = useState(null)
   const [hotspotReports, setHotspotReports] = useState([])
@@ -177,15 +178,7 @@ export default function MapView() {
     map.current = L.map(mapContainer.current).setView(initial.center, initial.zoom)
     L.tileLayer(TILE_URL, { attribution: TILE_ATTR, maxZoom: 19 }).addTo(map.current)
 
-    // First-time GPS centering if no saved position yet
-    if (!localStorage.getItem('nicox:mapView')) {
-      tryGeolocate().then((view) => {
-        if (view && map.current) {
-          map.current.setView(view.center, view.zoom)
-          saveView(view.center, view.zoom)
-        }
-      })
-    }
+    const hasSavedView = !!localStorage.getItem('nicox:mapView')
 
     const persist = () => {
       const c = map.current.getCenter()
@@ -201,6 +194,7 @@ export default function MapView() {
       L.DomEvent.disableClickPropagation(div)
       div.onclick = (e) => {
         e.preventDefault()
+        userRequestedLocate.current = true
         map.current.locate({ setView: true, maxZoom: 16, enableHighAccuracy: true })
       }
       return div
@@ -227,13 +221,23 @@ export default function MapView() {
     })
 
     map.current.on('locationerror', (e) => {
-      alert('現在地を取得できませんでした: ' + e.message)
+      // Only surface an error for an explicit button press; stay silent for the
+      // automatic locate on open (e.g. permission not yet granted / unavailable).
+      if (userRequestedLocate.current) {
+        userRequestedLocate.current = false
+        alert('現在地を取得できませんでした: ' + e.message)
+      }
     })
 
     map.current.on('click', (e) => {
       if (e.originalEvent?.target?.closest?.('.leaflet-marker-icon')) return
       setSelected(null)
     })
+    // Show the current-location marker automatically on open (no button press
+    // needed). Only re-center the map on the very first visit, so a returning
+    // user keeps their last viewed area.
+    map.current.locate({ setView: !hasSavedView, maxZoom: 16, enableHighAccuracy: true })
+
     plotData()
     setTimeout(() => map.current?.invalidateSize(), 100)
 

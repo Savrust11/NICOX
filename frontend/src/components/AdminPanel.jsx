@@ -142,11 +142,24 @@ export default function AdminPanel() {
 // ============================================================================
 // DASHBOARD
 // ============================================================================
+const DASHBOARD_STATS = [
+  { key: 'total_reports', label: '通報数（合計）', desc: 'これまでに登録された通報の累計件数です。' },
+  { key: 'reports_today', label: '本日の通報', accent: '#2e7d32', desc: '本日（0時以降）に受け付けた通報の件数です。' },
+  { key: 'reports_week', label: '今週の通報', desc: '今週受け付けた通報の件数です。' },
+  { key: 'reports_month', label: '今月の通報', desc: '今月受け付けた通報の件数です。' },
+  { key: 'active_users', label: 'アクティブユーザー', desc: '有効化されている（停止されていない）利用者アカウントの数です。' },
+  { key: 'pending_approvals', label: '承認待ち', accentIfPositive: '#d97706', desc: '承認待ちで、まだ地図機能を利用できない登録申請の数です。「ユーザー」から承認できます。' },
+  { key: 'active_hotspots', label: 'アクティブHS', desc: '現在対応・観察中のホットスポット（要対応地点）の数です。' },
+  { key: 'high_priority_hotspots', label: '高優先度HS', accent: '#c0392b', desc: '子猫がいるなど、優先的な対応が必要と判定されたホットスポットの数です。' },
+  { key: 'completed_interventions', label: '完了介入', desc: '完了したTNR（捕獲・不妊去勢・返還）などの対応（介入）の累計件数です。' },
+]
+
 function DashboardSection() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState('')
   const [openReportId, setOpenReportId] = useState(null)
+  const [openStat, setOpenStat] = useState(null)
 
   const load = useCallback(async () => {
     setLoading(true); setErr('')
@@ -174,15 +187,18 @@ function DashboardSection() {
         </div>
 
         <div className="stat-grid">
-          <StatCard label="通報数（合計）"     value={c.total_reports} />
-          <StatCard label="本日の通報"         value={c.reports_today} accent="#2e7d32" />
-          <StatCard label="今週の通報"         value={c.reports_week} />
-          <StatCard label="今月の通報"         value={c.reports_month} />
-          <StatCard label="アクティブユーザー" value={c.active_users} />
-          <StatCard label="承認待ち"           value={c.pending_approvals} accent={c.pending_approvals > 0 ? '#d97706' : null} />
-          <StatCard label="アクティブHS"       value={c.active_hotspots} />
-          <StatCard label="高優先度HS"         value={c.high_priority_hotspots} accent="#c0392b" />
-          <StatCard label="完了介入"           value={c.completed_interventions} />
+          {DASHBOARD_STATS.map((s) => {
+            const accent = s.accentIfPositive ? (c[s.key] > 0 ? s.accentIfPositive : null) : s.accent
+            return (
+              <StatCard
+                key={s.key}
+                label={s.label}
+                value={c[s.key]}
+                accent={accent}
+                onClick={() => setOpenStat({ ...s, value: c[s.key] })}
+              />
+            )
+          })}
         </div>
       </div>
 
@@ -252,6 +268,24 @@ function DashboardSection() {
         />
       )}
 
+      {openStat && (
+        <div className="modal-backdrop" onClick={() => setOpenStat(null)}>
+          <div className="modal modal-narrow" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>{openStat.label}</h3>
+              <button onClick={() => setOpenStat(null)}><X size={18} /></button>
+            </div>
+            <div className="modal-body">
+              <div className="stat-modal-value">{openStat.value ?? '-'}</div>
+              <p className="stat-modal-desc">{openStat.desc}</p>
+              <div className="modal-actions">
+                <button onClick={() => setOpenStat(null)}>閉じる</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="admin-section">
         <h3 className="subhead">月間 通報数 上位ユーザー</h3>
         <table className="admin-table">
@@ -267,12 +301,12 @@ function DashboardSection() {
   )
 }
 
-function StatCard({ label, value, accent }) {
+function StatCard({ label, value, accent, onClick }) {
   return (
-    <div className="stat-card">
+    <button type="button" className="stat-card stat-card-clickable" onClick={onClick}>
       <div className="stat-value" style={accent ? { color: accent } : null}>{value ?? '-'}</div>
       <div className="stat-label">{label}</div>
-    </div>
+    </button>
   )
 }
 
@@ -737,6 +771,7 @@ function HotspotsSection() {
   const [err, setErr] = useState('')
   const [cfg, setCfg] = useState({ days_back: 30, cluster_radius_meters: 100, min_points: 1, clear_existing: false })
   const [busy, setBusy] = useState(false)
+  const [openHotspot, setOpenHotspot] = useState(null)
 
   const load = useCallback(async () => {
     setLoading(true); setErr('')
@@ -807,7 +842,13 @@ function HotspotsSection() {
         <ul className="admin-list">
           {data.hotspots.map((h) => (
             <li key={h.id} className="admin-row">
-              <div className="admin-row-info">
+              <div
+                className="admin-row-info admin-row-clickable"
+                onClick={() => setOpenHotspot(h)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter') setOpenHotspot(h) }}
+              >
                 <div className="admin-row-name">
                   {h.id}
                   <span className={`pill pill-${h.status}`}>{tr(LABEL.hotspotStatus, h.status)}</span>
@@ -831,7 +872,84 @@ function HotspotsSection() {
           ))}
         </ul>
       </div>
+
+      {openHotspot && (
+        <HotspotDetailModal hotspot={openHotspot} onClose={() => setOpenHotspot(null)} />
+      )}
     </>
+  )
+}
+
+function HotspotDetailModal({ hotspot, onClose }) {
+  const [data, setData] = useState(null)
+  const [err, setErr] = useState('')
+
+  useEffect(() => {
+    let alive = true
+    api.getHotspot(hotspot.id)
+      .then((d) => alive && setData(d))
+      .catch((e) => alive && setErr(e.message))
+    return () => { alive = false }
+  }, [hotspot.id])
+
+  const photos = (data?.reports || []).flatMap((r) =>
+    (r.media_urls || []).map((url) => ({ url, reportId: r.id }))
+  )
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3>ホットスポット {hotspot.id} 詳細</h3>
+          <button onClick={onClose}><X size={18} /></button>
+        </div>
+        <div className="modal-body">
+          <DetailKV label="ステータス" value={<span className={`pill pill-${hotspot.status}`}>{tr(LABEL.hotspotStatus, hotspot.status)}</span>} />
+          <DetailKV label="通報数"     value={hotspot.report_count} />
+          <DetailKV label="推定頭数"   value={hotspot.cat_count_estimate ?? '-'} />
+          <DetailKV label="子猫"       value={hotspot.has_kitten ? 'あり' : 'なし'} />
+          <DetailKV label="耳カット"   value={hotspot.has_ear_cut_visible ? '確認済' : '未確認'} />
+          <DetailKV label="エリア"     value={hotspot.area_name || '(エリア外)'} />
+          <DetailKV label="座標"       value={fmtCoord(hotspot.latitude, hotspot.longitude)} />
+          <DetailKV label="最終確認"   value={hotspot.last_seen_at ? new Date(hotspot.last_seen_at).toLocaleString('ja-JP') : '-'} />
+
+          {err && <p className="admin-error">{err}</p>}
+
+          <div className="kv">
+            <div className="kv-label">紐づく通報</div>
+            <div className="kv-value">
+              {!data && !err && '読み込み中...'}
+              {data && data.reports.length === 0 && '通報はありません'}
+              {data && data.reports.map((r) => (
+                <div key={r.id} className="hs-report-line">
+                  <span>#{r.id}</span>
+                  <span className={`pill pill-${r.status}`}>{tr(LABEL.reportStatus, r.status)}</span>
+                  <span>{new Date(r.reported_at).toLocaleDateString('ja-JP')}</span>
+                  {r.notes && <span title={r.notes}>📝 {r.notes.slice(0, 24)}{r.notes.length > 24 ? '…' : ''}</span>}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {photos.length > 0 && (
+            <div className="kv">
+              <div className="kv-label">写真（{photos.length}）</div>
+              <div className="photo-grid">
+                {photos.map((p, i) => (
+                  <a key={`${p.url}-${i}`} href={p.url} target="_blank" rel="noreferrer">
+                    <img src={p.url} alt={`通報 #${p.reportId}`} />
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="modal-actions">
+            <button onClick={onClose}>閉じる</button>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
 

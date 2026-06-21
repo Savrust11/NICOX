@@ -164,6 +164,46 @@
   font-size: 12px;
   color: #777;
 }
+.stat-card-clickable {
+  width: 100%;
+  cursor: pointer;
+  transition: background 0.12s, box-shadow 0.12s, transform 0.12s;
+}
+.stat-card-clickable:hover {
+  background: #fff;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  transform: translateY(-1px);
+}
+
+/* Compact stat-description popup */
+.modal-narrow { max-width: 360px; }
+.stat-modal-value {
+  font-size: 34px;
+  font-weight: 800;
+  color: #1a1a1a;
+  text-align: center;
+  line-height: 1.1;
+}
+.stat-modal-desc {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.7;
+  margin: 0;
+  text-align: center;
+}
+
+/* Linked-report rows inside the hotspot detail modal */
+.hs-report-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #1a1a1a;
+  padding: 4px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+.hs-report-line:last-child { border-bottom: none; }
 
 /* ===== Table ===== */
 .admin-table {

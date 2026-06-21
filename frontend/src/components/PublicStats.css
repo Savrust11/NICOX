@@ -17,7 +17,7 @@
   margin-bottom: 8px;
 }
 .ps-hero p {
-  font-size: 15px;
+  font-size: 16px;
   color: #666;
 }
 
@@ -53,6 +53,15 @@
   background: #fafbfc;
   border-radius: 10px;
   border-left: 4px solid #ccc;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s, box-shadow 0.12s, transform 0.12s;
+}
+.ps-card:hover {
+  background: #fff;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  transform: translateY(-1px);
 }
 .ps-card-icon {
   width: 36px;
@@ -70,7 +79,7 @@
   line-height: 1;
 }
 .ps-card-label {
-  font-size: 12px;
+  font-size: 13px;
   color: #777;
   margin-top: 4px;
 }
@@ -168,3 +177,110 @@
   font-size: 13px;
 }
 .ps-area-link:hover { text-decoration: underline; }
+
+/* Logged-in account summary card */
+.ps-account {
+  max-width: 900px;
+  margin: 0 auto 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #fff;
+  border-radius: 14px;
+  padding: 16px 20px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+}
+.ps-account-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #e8f0fe;
+  color: #1a73e8;
+  flex-shrink: 0;
+}
+.ps-account-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 6px;
+}
+.ps-account-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.ps-badge {
+  font-size: 12px;
+  font-weight: 600;
+  color: #555;
+  background: #f1f3f5;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+.ps-badge-role {
+  color: #1a73e8;
+  background: #e8f0fe;
+}
+
+/* Stat detail popup */
+.ps-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+.ps-modal {
+  position: relative;
+  background: #fff;
+  border-radius: 16px;
+  padding: 28px 24px 24px;
+  width: 100%;
+  max-width: 360px;
+  text-align: center;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+}
+.ps-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: #999;
+  cursor: pointer;
+  padding: 4px;
+}
+.ps-modal-close:hover { color: #333; }
+.ps-modal-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  background: #f7f9fb;
+  margin-bottom: 10px;
+}
+.ps-modal-value {
+  font-size: 34px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+.ps-modal-label {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-top: 4px;
+}
+.ps-modal-desc {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.7;
+  margin-top: 12px;
+}
