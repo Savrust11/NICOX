@@ -42,6 +42,21 @@ const LABEL = {
     immediate: 'すぐ対応してほしい',
   },
 }
+// 監査ログのアクションコード → 日本語ラベル
+const ACTION_LABEL = {
+  'user.update': 'ユーザー更新',
+  'user.areas_update': '管轄エリア更新',
+  'user.delete': 'ユーザー削除',
+  'report.update': '通報更新',
+  'report.delete': '通報削除',
+  'report.bulk_delete': '通報一括削除',
+  'hotspot.delete': 'ホットスポット削除',
+  'hotspot.refresh': 'ホットスポット再生成',
+  'area.create': 'エリア作成',
+  'area.update': 'エリア更新',
+  'area.delete': 'エリア削除',
+  'export.reports': '通報エクスポート',
+}
 const trList = (map, arr) => (arr || []).map((v) => tr(map, v)).join(', ') || '-'
 const fmtCoord = (lat, lng) => {
   if (lat == null || lng == null) return '-'
@@ -1208,7 +1223,7 @@ function AuditSection() {
       <div className="filter-row">
         <select value={filterAction} onChange={(e) => setFilterAction(e.target.value)}>
           <option value="">全アクション</option>
-          {actions.map((a) => <option key={a} value={a}>{a}</option>)}
+          {actions.map((a) => <option key={a} value={a}>{ACTION_LABEL[a] || a}</option>)}
         </select>
       </div>
       {err && <p className="admin-error">{err}</p>}
@@ -1224,7 +1239,7 @@ function AuditSection() {
             <tr key={e.id}>
               <td data-label="日時">{new Date(e.created_at).toLocaleString('ja-JP')}</td>
               <td data-label="実行者">{e.actor_email || `#${e.actor_user_id}`}</td>
-              <td data-label="アクション">{e.action}</td>
+              <td data-label="アクション">{ACTION_LABEL[e.action] || e.action}</td>
               <td data-label="対象">{e.target_type} {e.target_id && `#${e.target_id}`}</td>
               <td data-label="詳細"><span className="audit-details">{formatAuditDetails(e.details)}</span></td>
             </tr>
