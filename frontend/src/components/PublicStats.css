@@ -84,6 +84,71 @@
   margin-top: 4px;
 }
 
+/* Citizen / public home: prominent report call-to-action */
+.ps-report-cta {
+  max-width: 720px;
+  margin: 0 auto 20px;
+  background: #fff;
+  border-radius: 14px;
+  padding: 30px 24px;
+  text-align: center;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+}
+.ps-report-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  background: #fff4e6;
+  color: #e67e22;
+  margin-bottom: 12px;
+}
+.ps-report-cta h2 {
+  font-size: 20px;
+  font-weight: 800;
+  color: #1a1a1a;
+  margin-bottom: 8px;
+}
+.ps-report-cta p {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.7;
+  margin-bottom: 20px;
+}
+.ps-report-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #e67e22;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  padding: 14px 34px;
+  border-radius: 999px;
+}
+.ps-report-btn:hover { background: #d35400; opacity: 1; }
+
+/* Staff home: quick action to the map */
+.ps-quick-actions {
+  margin-top: 16px;
+  display: flex;
+  justify-content: center;
+}
+.ps-map-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #1a73e8;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 22px;
+  border-radius: 999px;
+}
+.ps-map-btn:hover { background: #1557b0; opacity: 1; }
+
 .ps-cta {
   max-width: 720px;
   margin: 0 auto;

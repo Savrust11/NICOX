@@ -61,7 +61,12 @@ export default function App() {
     if (activeTab === 'map' && isApproved) return <MapView />
     if (activeTab === 'admin' && isAdmin) return <AdminPanel />
     if (activeTab === 'help') return <HelpScreen />
-    return <PublicStats />
+    return (
+      <PublicStats
+        onReport={() => setTab('report')}
+        onViewMap={isApproved ? () => setTab('map') : undefined}
+      />
+    )
   }
 
   return (

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { AlertTriangle, BarChart3, CheckCircle, Eye, MapPin, Stethoscope, UserCircle, X } from 'lucide-react'
+import { AlertTriangle, BarChart3, CheckCircle, Eye, Map as MapIcon, MapPin, PencilLine, Stethoscope, UserCircle, X } from 'lucide-react'
 import { api } from '../lib/api'
 import { useAuth } from '../lib/AuthContext'
 import './PublicStats.css'
@@ -17,14 +17,36 @@ const STAT_CARDS = [
   { key: 'resolved_hotspots', icon: <CheckCircle size={20} />, label: '解決済みエリア', color: '#27ae60', desc: '対応が完了し、解決済みとなったエリアの数です。' },
 ]
 
-export default function PublicStats() {
+function AccountCard({ user }) {
+  return (
+    <div className="ps-account">
+      <div className="ps-account-avatar"><UserCircle size={32} /></div>
+      <div className="ps-account-body">
+        <div className="ps-account-name">{user.name} さん</div>
+        <div className="ps-account-badges">
+          <span className="ps-badge ps-badge-role">{ROLE_LABEL[user.role] || user.role}</span>
+          <span className="ps-badge">{APPROVAL_LABEL[user.approval_status] || user.approval_status}</span>
+          {user.organization && <span className="ps-badge">{user.organization}</span>}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default function PublicStats({ onReport, onViewMap }) {
   const { user } = useAuth()
+  const role = user?.role
+  const approved = user?.approval_status === 'approved' || role === 'admin'
+  // 活動者（承認済み）・管理者のみ「活動状況」を表示。市民・未ログインは通報中心の簡易ホーム。
+  const isStaff = !!user && (role === 'admin' || (role === 'member' && approved))
+
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState('')
   const [detail, setDetail] = useState(null)
 
   useEffect(() => {
+    if (!isStaff) { setLoading(false); return }
     let alive = true
     setLoading(true)
     api.getPublicStats()
@@ -32,8 +54,40 @@ export default function PublicStats() {
       .catch((e) => alive && setErr(e.message))
       .finally(() => alive && setLoading(false))
     return () => { alive = false }
-  }, [])
+  }, [isStaff])
 
+  // ===== 市民・未ログイン向けホーム（通報中心・数値なし） =====
+  if (!isStaff) {
+    return (
+      <div className="public-stats">
+        <div className="ps-hero">
+          <h1>NICOX 地域猫マネジメント</h1>
+          <p>地域の野良猫に関する困りごとを受け付けています。</p>
+        </div>
+
+        {user && <AccountCard user={user} />}
+
+        <div className="ps-report-cta">
+          <div className="ps-report-icon"><PencilLine size={30} /></div>
+          <h2>猫のことで困ったら</h2>
+          <p>場所や状況をかんたんに登録できます。写真の添付も可能です。</p>
+          <button className="ps-report-btn" onClick={onReport}>
+            <PencilLine size={18} strokeWidth={2.4} /> 通報する
+          </button>
+        </div>
+
+        <div className="ps-cta">
+          <h2>活動者・行政関係者の方へ</h2>
+          <p>
+            活動状況の詳細（地図・通報内容など）の閲覧には、活動者・関係者としてのご登録と
+            管理者の承認が必要です。動物愛護の観点から、位置情報を含むデータの取り扱いには慎重を期しています。
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  // ===== 活動者・管理者向けホーム（活動状況） =====
   return (
     <div className="public-stats">
       <div className="ps-hero">
@@ -41,19 +95,7 @@ export default function PublicStats() {
         <p>地域の野良猫問題に取り組むためのプラットフォームです。</p>
       </div>
 
-      {user && (
-        <div className="ps-account">
-          <div className="ps-account-avatar"><UserCircle size={32} /></div>
-          <div className="ps-account-body">
-            <div className="ps-account-name">{user.name} さん</div>
-            <div className="ps-account-badges">
-              <span className="ps-badge ps-badge-role">{ROLE_LABEL[user.role] || user.role}</span>
-              <span className="ps-badge">{APPROVAL_LABEL[user.approval_status] || user.approval_status}</span>
-              {user.organization && <span className="ps-badge">{user.organization}</span>}
-            </div>
-          </div>
-        </div>
-      )}
+      {user && <AccountCard user={user} />}
 
       <div className="ps-section">
         <h2><BarChart3 size={18} /> 現在の活動状況</h2>
@@ -73,15 +115,13 @@ export default function PublicStats() {
             ))}
           </div>
         )}
-      </div>
-
-      <div className="ps-cta">
-        <h2>活動者・行政関係者の方へ</h2>
-        <p>
-          通報内容（場所・写真・詳細情報）の閲覧には、活動者・関係者として登録いただき、
-          管理者の承認を経てログインしていただく必要があります。
-          動物愛護の観点から、位置情報を含む詳細データの取り扱いには慎重を期しています。
-        </p>
+        {onViewMap && (
+          <div className="ps-quick-actions">
+            <button className="ps-map-btn" onClick={onViewMap}>
+              <MapIcon size={16} /> 地図でホットスポットを見る
+            </button>
+          </div>
+        )}
       </div>
 
       {detail && (
