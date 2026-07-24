@@ -1,4 +1,4 @@
-# NICOX — Stray Cat Management System
+## NICOX — Stray Cat Management System
 
 A geospatial reporting & hotspot-detection platform for stray cat populations.
 Citizens submit sightings with location + photo through a React UI; the system
